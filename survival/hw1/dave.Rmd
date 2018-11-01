@@ -1,0 +1,82 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(survival)
+library(survminer)
+library(muhaz)
+library(tidyverse)
+```
+
+Loading the katrina dataset
+```{r}
+katrina <- read_csv("survival/data/katrina.csv")
+```
+
+creating survival object for katrina using the survive column as the event
+and fitting the survival function using no predictions
+```{r}
+kat_fit <- survfit(Surv(hour, survive == 0) ~ 1, data = katrina)
+summary(kat_fit)
+```
+
+get the plot of the survival function
+```{r}
+ggsurvplot(kat_fit, conf.int = TRUE, palette = "grey")
+```
+
+creating survival object for katrina using the survive column as the event
+and fitting the survival function using reason groups
+```{r}
+kat_fit <- survfit(Surv(hour, survive == 0) ~ reason, data = katrina, subset = reason != 0)
+summary(kat_fit)
+```
+
+get the plot of the survival functions of each group
+```{r}
+ggsurvplot(kat_fit, data = katrina, conf.int = TRUE, palette = "grey")
+```
+
+
+are the reason groups statistically different
+```{r}
+survdiff(Surv(hour, survive == 0) ~ reason, data = katrina, subset = reason != 0)
+```
+
+```{r}
+pairwise_survdiff(Surv(hour, survive == 0) ~ reason, data = katrina[katrina$reason != 0,])
+```
+
+creating groups for failures as water or mechanical
+```{r}
+katrina <- katrina %>% 
+  mutate(fail_type = if_else(reason == 1 | reason == 3, "water", "mech"))
+```
+
+
+looking for difference between failure type groups
+```{r}
+survdiff(Surv(hour, survive == 0) ~ fail_type, data = katrina)
+pairwise_survdiff(Surv(hour, survive == 0) ~ fail_type, data = katrina)
+```
+
+fixing the last hour to ensure there are no censored events
+```{r}
+katrina <- katrina %>% 
+  mutate(hour2 = ifelse(hour == 48 & reason == 0, 49, hour), 
+         inv_surv = ifelse(survive == 1, 0, 1))
+```
+
+creating a hazard object and plot
+```{r}
+kat_haz <- with(katrina[katrina$reason != 0,], kphaz.fit(time = hour, status = inv_surv,strata =  reason))
+kphaz.plot(kat_haz)
+```
+
+looking at cummulative hazard plot
+```{r}
+ggsurvplot(kat_fit, fun = "cumhaz", palette = "grey")
+```
+
