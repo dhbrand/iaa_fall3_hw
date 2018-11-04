@@ -29,9 +29,11 @@ rsconnect/
 .DS_Store
 
 # daves local work folders
-class_work/
+*class_work/
 dm/ml/
 
+# temporary office files
+*~$*
 
 
 
