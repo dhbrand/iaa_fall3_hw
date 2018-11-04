@@ -136,13 +136,12 @@ pairwise_survdiff(Surv(hour, survive == 0) ~ fail_type, data = katrina)
 
 
   # fix hour for censoring and create hazardplots
-katrina = katrina %>% 
-  mutate(hour2 = ifelse(hour == 48 & reason == 0, 49, hour), 
-         inv_surv = ifelse(survive == 1, 0, 1))
+katrina$hour2 = ifelse(katrina$hour == 48 & katrina$reason == 0, 49, katrina$hour)
+katrina$inv_surv = ifelse(katrina$survive == 1, 0, 1)
 
-kat_haz = with(katrina[katrina$reason != 0,], kphaz.fit(time = hour, status = inv_surv,strata =  reason))
+kat_haz = with(katrina, kphaz.fit(time = hour2, status = inv_surv))
 kphaz.plot(kat_haz)
-ggsurvplot(all.fit, fun = "cumhaz", palette = "grey")
+ggsurvplot(all.fit, fun = "cumhaz")
 
 
 
