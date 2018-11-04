@@ -89,6 +89,8 @@ summary(jammed)   # Mean hour fail = 21; median = 25; min = 5; max = 27
                   # Avg slope of 5.672; min = 0; max = 18
                   # Avg elevation of 2.793; min = 2; max = 3
 
+summary(flood[which(flood$backup == 0)]) #for finding out why pumps with backups still flooded (likely backups failed for other reasons)
+
   # median failure time for each type
 #flood  = 26
 #motor  = 45
