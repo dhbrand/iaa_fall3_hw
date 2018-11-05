@@ -17,7 +17,7 @@ library(flexsurv)
 library(dplyr)
 
 # load data
-recid <- read.csv("/your/data/folder/recid.csv", header = TRUE)
+recid <- read.csv("survival/data//recid.csv", header = TRUE)
 
 ### fitting AFT models
 # fit AFT models using survreg()
