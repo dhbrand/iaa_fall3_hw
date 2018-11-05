@@ -3,6 +3,7 @@ library(readxl)
 library(magrittr)
 library(lubridate)
 library(viridis)
+library(triangle)
 
 cost <- read_excel("sim_risk/data/Analysis_Data.xlsx", 
                    sheet = 'Drilling Cost', 
@@ -55,6 +56,40 @@ long_dat %>%
                              q25 = quantile(., .25), 
                              q75 = quantile(., .75)),
                              na.rm = TRUE)
+sub_dat <- cost %>% 
+  filter(year >= 1991 & year <= 2006)
+
+combined_cost <- with(sub_dat, c(crud_oil_cost, nat_gas_cost, dry_cost))
+combined_ret <- with(sub_dat, c(crud_oil_ret, nat_gas_ret, dry_ret))
+
+combined <- data.frame(cost = combined_cost, ret = as.numeric(combined_ret)) 
+
+# Introduction to Simulation #
+set.seed(112358)
+samp <- 10000
+sim <- data.frame(y2006 = rnorm(n=samp, mean=mean(combined$ret), sd=sd(combined$ret)))
+
+new_years <- c('y2007', 'y2008', 'y2009', 'y2010', 'y2011', 'y2012')
+for (year in 2:7){
+  avg <- mean( sim[,year - 1])
+  std <- sd(sim[,year - 1])
+  sim[,year] <- rnorm(n = samp, mean = avg, sd = std)
+}
+colnames(sim)[2:7] <- new_years
+
+new_years2 <- c('y2013', 'y2014', 'y2015')
+for (year in 8:10){
+  sim[,year] <- rtriangle(samp, a = 0.07, b = -0.22, c = -0.0917)
+}
+colnames(sim)[8:10] <- new_years2
+
+new_years3 <- c('y2016', 'y2017', 'y2018')
+for (year in 11:13){
+  avg <- mean(sim[, year - 1]) * 1.05
+  sim[,year] <- rtriangle(samp, a = 0.02, b = 0.06, c = avg)
+}
+colnames(sim)[11:13] <- new_years3
 
 
-
+avg <- mean(sim[, 1]) * (1-0.0917)
+sim_test <- rtriangle(samp, a = 0.02, b = 0.06, c = avg)
