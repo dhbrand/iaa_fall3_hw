@@ -20,7 +20,7 @@ library(ggmap)
 library(dplyr)
 library(data.table)
 library(ggrepel)
-listings <- read_csv("listings.csv")
+listings <- read_csv("clust/data/listings.csv")
 
 register_google("[YOUR API KEY HERE]")
 
