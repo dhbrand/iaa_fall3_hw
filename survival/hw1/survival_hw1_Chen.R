@@ -54,7 +54,7 @@ ggsurv$plot + theme_bw() + theme(legend.text=element_text(size=rel(0.85))) #plot
 ggsurv2 = ggsurvplot(kat_failtype, data = katrina, conf.int = FALSE, palette = "hue",
                      title="Figure 2: Pump Survival Curves by Binned Failures During Hurricanes",
                      legend="top",xlab="Hours", xlim = c(0, 48), ylab="Survival Probability",
-                     legend.title="Binned Failures",legend.labs=c("Methanical","Water"))
+                     legend.title="Binned Failures",legend.labs=c("Mechanical","Water"))
 ggsurv2$plot + theme_bw() + theme(legend.text=element_text(size=rel(0.85)))
 
 # ------------------ log-rank tests --------------------
