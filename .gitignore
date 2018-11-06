@@ -26,7 +26,7 @@ vignettes/*.pdf
 rsconnect/
 .Rproj.user
 # Hides mac directors file
-.DS_Store
+*.DS_Store*
 
 # daves local work folders
 *class_work/

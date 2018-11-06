@@ -27,11 +27,17 @@ katrina %>%
   summarise(n = n()) %>% 
   mutate(freq = n / sum(n))
 
-# percentage of pumps in each failure type
+# average of each reasons factors
 katrina %>% 
   group_by(reason) %>% 
+  summarize_at(3:8, funs(mean), na.rm=TRUE) 
+
+# percentage of pumps in each failure type
+katrina %>% 
+  group_by(reason)%>% 
   summarise(n = n()) %>% 
   mutate(freq = n / sum(n))
+
 
 # median surival time
 kat_med <- survfit(Surv(hour, survive == 0) ~ 1, data = katrina)

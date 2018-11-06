@@ -11,7 +11,7 @@ library(readr)
 #Load the dataset and group the 
 #reviews by the listing id 
 #keep all listings having more than 4 reviews 
-reviews <- read_csv("reviews.csv")
+reviews <- read_csv("clust/data/reviews.csv")
 
 rv <- reviews %>% group_by(listing_id) %>%
                   count(listing_id, sort = TRUE) %>% filter( n >= 4) %>% select(-"n") 
