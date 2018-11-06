@@ -5,6 +5,7 @@ library(lubridate)
 library(viridis)
 library(triangle)
 
+##-----------------------------------------------------------------------------
 cost <- read_excel("sim_risk/data/Analysis_Data.xlsx", 
                    sheet = 'Drilling Cost', 
                    skip = 2)
@@ -14,6 +15,7 @@ future <- read_excel('sim_risk/data/Analysis_Data.xlsx',
 str(cost)
 str(future)
 
+##-----------------------------------------------------------------------------
 # rename columns
 cost %<>% select(date = Date, 
                  crud_oil_cost = `U.S. Nominal Cost per Crude Oil Well Drilled (Thousand Dollars per Well)`,
@@ -31,6 +33,8 @@ long_dat <- cost %>%
   gather(var, value, -c(date, year)) %>% 
   modify_at('value', as.numeric) %>% 
   mutate(value = round(value, 2))
+
+##-----------------------------------------------------------------------------
 # look at time series plots for all values
 ggplot(long_dat, aes(year, value, color = var)) + 
   geom_line() + 
@@ -39,6 +43,7 @@ ggplot(long_dat, aes(year, value, color = var)) +
   theme(legend.position = 'None') +
   scale_color_viridis_d()
 
+##-----------------------------------------------------------------------------
 # look at histograms of all the values
 # look at time series plots for all values
 ggplot(long_dat, aes(value)) + 
@@ -49,6 +54,7 @@ ggplot(long_dat, aes(value)) +
   theme(legend.position = 'None') +
   scale_color_viridis_d()
 
+##-----------------------------------------------------------------------------
 # summary stats of vars
 long_dat %>% 
   group_by(var) %>% 
@@ -64,13 +70,14 @@ combined_ret <- with(sub_dat, c(crud_oil_ret, nat_gas_ret, dry_ret))
 
 combined <- data.frame(cost = combined_cost, ret = as.numeric(combined_ret)) 
 
+##-----------------------------------------------------------------------------
 # building the simulations
 samp <- 10000
 sim <- data.frame(y2006 = rnorm(n=samp, mean=mean(combined$ret), sd=sd(combined$ret)))
 avg_yearly_cost <- mean(combined$cost)
 sd_yearly_cost <- sd(combined$cost)
 
-
+##-----------------------------------------------------------------------------
 new_years <- c('y2007', 'y2008', 'y2009', 'y2010', 'y2011', 'y2012')
 for (year in 2:7) {
   avg <- mean( sim[,year - 1])
@@ -81,6 +88,7 @@ for (year in 2:7) {
 }
 colnames(sim)[2:7] <- new_years
 
+##-----------------------------------------------------------------------------
 new_years2 <- c('y2013', 'y2014', 'y2015')
 for (year in 8:10){
   sim[,year] <- rtriangle(samp, a = 0.07, b = 0.22, c = 0.0917)
@@ -89,6 +97,7 @@ for (year in 8:10){
 }
 colnames(sim)[8:10] <- new_years2
 
+##-----------------------------------------------------------------------------
 new_years3 <- c('y2016', 'y2017', 'y2018')
 for (year in 11:13){
   sim[,year] <- rtriangle(samp, a = 0.02, b = 0.06, c = .05)
@@ -99,3 +108,104 @@ colnames(sim)[11:13] <- new_years3
 
 
 avg_yearly_cost
+
+##-----------------------------------------------------------------------------
+# based on labarr's code 
+set.seed(303)
+avg <- mean(combined$ret)
+stdev <- sd(combined$ret)
+P5 <- rep(0,10000)
+for(i in 1:10000){
+  P0 <- mean(combined$cost)
+  r <- rnorm(n=1, mean=avg, sd=stdev)
+  
+  Pt <- P0*(1 + r)
+  
+  for(j in 1:5){
+    r <- rnorm(n=1, mean=avg, sd=stdev)
+    Pt <- Pt*(1+r)
+  }
+  P5[i] <- Pt
+}
+
+mean(P5)
+sd(P5)
+hist(P5, breaks=50, main='2007-2012 Cost Change Distribution', xlab='Final Value')
+abline(v = 1000, col="red", lwd=2)
+mtext("2006 Cost", at=mean(combined$cost), col="red")
+
+##-----------------------------------------------------------------------------
+y13_y15 <- rep(0,10000)
+for(i in 1:10000){
+  P0 <- mean(P5)
+  r <- rtriangle(1, a = 0.07, b = 0.22, c = 0.0917)
+  
+  Pt <- P0*(1 - r)
+  
+  for(j in 1:3){
+    r <- rtriangle(1, a = 0.07, b = 0.22, c = 0.0917)
+    Pt <- Pt*(1 - r)
+  }
+  y13_y15[i] <- Pt
+}
+
+mean(y13_y15)
+sd(y13_y15)
+hist(P5, breaks=50, main='2013-2015 Cost Change Distribution', xlab='Final Value')
+abline(v = 1000, col="red", lwd=2)
+mtext("2012 Cost", at=mean(y13_y15), col="red")
+
+##-----------------------------------------------------------------------------
+y16_y18 <- rep(0,10000)
+for(i in 1:10000){
+  P0 <- mean(y13_y15)
+  r <- rtriangle(1, a = 0.02, b = 0.06, c = 0.05)
+  
+  Pt <- P0*(1 + r)
+  
+  for(j in 1:3){
+    r <- rtriangle(1, a = 0.02, b = 0.06, c = 0.05)
+    Pt <- Pt*(1+r)
+  }
+  y16_y18[i] <- Pt
+}
+
+mean(y16_y18)
+sd(y16_y18)
+hist(P5, breaks=50, main='2016-2018 Cost Change Distribution', xlab='Final Value')
+abline(v = 1000, col="red", lwd=2)
+mtext("2015 Cost", at=mean(y16_y18), col="red")
+
+##-----------------------------------------------------------------------------
+# kde estimation for 2007-2012
+den_07_12 <- density(P5, bw="SJ-ste")
+den_07_12
+
+est_07_12<- rkde(fhat=kde(P5, h=den_07_12$bw), n=1000)
+hist(est_07_12, breaks=50, main='Estimated 5 Year Cost Change Distribution', xlab='Final Value')
+
+##-----------------------------------------------------------------------------
+# 2019 estimation
+# using normal distribution
+set.seed(303)
+prev <- rtriangle(1000, a = 0.02, b = 0.06, c = 0.05)
+prev_avg <- mean(prev)
+prev_sd <- sd(prev)
+r <- rnorm(n=10000, mean=prev_avg, sd=prev_sd)
+P18 <- mean(y16_y18)
+P19 <- P18*(1+r)
+
+mean(P19)
+sd(P19)
+
+hist(P19, breaks=50, main='Estimated 1 Year Cost Change Distribution', xlab='Final Value', include.lowest = TRUE)
+abline(v = P18, col="red", lwd=2)
+mtext("2018 Value", at=1000, col="red")
+
+##-----------------------------------------------------------------------------
+# kde estimation
+den_19 <- density(y16_y18, bw="SJ-ste")
+den_19
+
+est_19<- rkde(fhat=kde(y16_y18, h=den_19$bw), n=1000)
+hist(est_19, breaks=30, main='Estimated 1 Year Cost Change Distribution', xlab='Final Value')
