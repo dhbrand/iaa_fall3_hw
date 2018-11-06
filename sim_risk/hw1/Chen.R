@@ -33,7 +33,6 @@ qqnorm(hist_return)
 qqline(hist_return, col = "steelblue", lwd = 2)
 qqPlot(hist_return)
 
-# building the simulation for 2007 to 2012
 avg_ret = mean(hist_return)
 sd_ret = sd(hist_return)
 
