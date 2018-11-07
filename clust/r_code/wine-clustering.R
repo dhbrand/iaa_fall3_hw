@@ -1,7 +1,7 @@
 library(mclust)
 library(readr)
 
-winequality_red <- read_csv("winequality-red.csv")
+winequality_red <- read_csv("clust/data/winequality-red.csv")
 
 clPairs(winequality_red[,1:5],winequality_red$quality)
 

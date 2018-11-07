@@ -16,48 +16,68 @@ glimpse(test)
 MLProjectData %<>% 
   modify_if(is.logical, as.factor) %>% 
   glimpse()
-# for reproduciblity
-set.seed(123)
 
-# default RF model
+
+# building recipes ####
+# bake a recipe with dummy variables
+rec_obj <- recipe(target ~ ., data = MLProjectData)
+
+trained_rec <- rec_obj %>%
+  step_knnimpute(all_predictors()) %>% 
+  step_dummy(all_predictors(), -all_numeric()) %>% 
+  step_center(all_predictors())  %>%
+  step_scale(all_predictors()) %>% 
+  prep(training = MLProjectData)
+
+train_data <- bake(trained_rec, newdata = MLProjectData)
+test_data <- bake(trained_rec, newdata = test.data)
+
+
+set.seed(123)
+valid_split <- initial_split(train_data, .8)
+
+# training data
+train_v2 <- analysis(valid_split)
+x_train <- train_v2[setdiff(names(train_v2), "target")]
+y_train <- train_v2$target
+
+# validation data
+valid <- assessment(valid_split)
+x_valid <- valid[setdiff(names(valid), "target")]
+y_valid <- valid$target
+
+
+# default RF model ####
 m1 <- randomForest(
   formula = target ~ .,
-  data    = MLProjectData
+  data    = train_v2
 )
 m1
 
 plot(m1)
 
 # number of trees with lowest MSE
-which.min(m1$mse)
+which.min(m1$mse) # 343
+
+# what is the lowest mse
+min(m1$mse) # 2.050811
 
 # RMSE of this optimal random forest
 sqrt(m1$mse[which.min(m1$mse)])
 
-# create training and validation data 
-set.seed(123)
-valid_split <- initial_split(MLProjectData, .8)
 
-# training data
-train_v2 <- analysis(valid_split)
-
-# validation data
-valid <- assessment(valid_split)
-x_test <- valid[setdiff(names(valid), "target")]
-y_test <- valid$target
-
-
-
+# Out of Bag vs Validation Error ####
+# using default parameters
 rf_oob_comp <- randomForest(
   formula = target ~ .,
   data    = train_v2,
-  xtest   = x_test,
-  ytest   = y_test
+  xtest   = x_valid,
+  ytest   = y_valid
 )
 
 # extract OOB & validation errors
-oob <- sqrt(rf_oob_comp$mse)
-validation <- sqrt(rf_oob_comp$test$mse)
+oob <- rf_oob_comp$mse
+validation <- rf_oob_comp$test$mse
 
 # compare error rates
 tibble::tibble(
@@ -65,14 +85,14 @@ tibble::tibble(
   `Test error` = validation,
   ntrees = 1:rf_oob_comp$ntree
 ) %>%
-  gather(Metric, RMSE, -ntrees) %>%
-  ggplot(aes(ntrees, RMSE, color = Metric)) +
+  gather(Metric, MSE, -ntrees) %>%
+  ggplot(aes(ntrees, MSE, color = Metric)) +
   geom_line() +
   scale_y_continuous(labels = scales::dollar) +
   xlab("Number of trees")
 
 
-
+# going to use the built in tuning function from randomForest, we are starting at 5 random variables per split and 
 # names of features
 features <- setdiff(names(MLProjectData), "target")
 
@@ -147,30 +167,7 @@ hyper_grid %>%
   head(10)
 
 
-# building recipes ####
-# bake a recipe with dummy variables
-rec_obj <- recipe(target ~ ., data = MLProjectData)
 
-
-imputed <- rec_obj %>%
-  step_knnimpute(all_predictors()) 
-imputed
-
-ind_vars <- imputed %>%
-  step_dummy(all_predictors(), -all_numeric()) 
-ind_vars
-
-standardized <- ind_vars %>%
-  step_center(all_predictors())  %>%
-  step_scale(all_predictors()) 
-standardized
-
-trained_rec <- prep(standardized, training = MLProjectData)
-trained_rec
-
-train_data <- bake(trained_rec, newdata = MLProjectData)
-test_data <- bake(trained_rec, newdata = test.data)
-test_data <- bake(trained_rec, newdata = test)
 
 # make ranger compatible names
 names(train_data) <- make.names(names(train_data), allow_ = FALSE)
