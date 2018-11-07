@@ -25,7 +25,7 @@ drill = drill %>% mutate(Year= year(Year))
 valid = drill[drill$Year >=1991 & drill$Year<=2006,]
 hist_return = as.numeric(c(valid$Oil_Return,valid$Gas_Return,valid$Well_Return))
 hist_cost = c(valid$Cost_per_Crude_Oil,valid$Cost_per_Natural_Gas,valid$Cost_per_Dry_Well)
-
+mean(hist_cost)
 # --------------- normal distribution simulation ---------
 
 # QQ PLOT - passed normality assumption
@@ -43,10 +43,10 @@ cost0 = sum(valid[valid$Year == 2006,2:4])/3
 # take one random draw for each year's return and multiply them to get to one possible 2019 cost
 # --> repeat this process for 10000 times to get all the simulated 2019 costs
 
-cost_norm <- rep(0,10000)
+cost_norm <- rep(0,100000)
 set.seed(303)
 
-for (ii in 1:10000){
+for (ii in 1:100000){
   
   # initial cost in 2006
   cost_t = cost0
@@ -77,10 +77,10 @@ hist(cost_norm, breaks=50, main='Year 2019 Cost Distribution (Norm)', xlab='Fina
 # ------------------- kernel density function -------------------- #
 
 density.ret = density(hist_return, bw="SJ-ste")
-cost_kde <- rep(0,10000)
+cost_kde <- rep(0,100000)
 set.seed(303)
 
-for (ii in 1:10000){
+for (ii in 1:100000){
   
   # initial cost in 2006
   cost_t = cost0
@@ -109,3 +109,8 @@ sd(cost_kde)
 hist(cost_kde, breaks=50, main='Year 2019 Cost Distribution (KDE)', xlab='Final Cost')
 
 
+# r1 <- rtriangle(n=10000, a = -0.22, b = -0.07, c = -0.0917)
+# hist(1+r1, breaks=50, main='Year 2019 Cost Distribution (KDE)', xlab='Final Cost')
+# 
+# r2 <- rtriangle(10000, a = 0.07, b = 0.22, c = 0.0917)
+# hist(1-r2, breaks=50, main='Year 2019 Cost Distribution (KDE)', xlab='Final Cost')
