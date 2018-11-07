@@ -86,11 +86,11 @@ combined <- data.frame(year = sub_dat$year, cost = combined_cost, ret = as.numer
 
 # first using normal distr in years 2006-2012
 set.seed(303)
-avg_06 <- select(combined, year, cost) %>% filter(year == 2006) %>% pull %>% mean
+avg_06 <- dplyr::select(combined, year, cost) %>% filter(year == 2006) %>% pull %>% mean
 avg <- mean(combined$ret)
 stdev <- sd(combined$ret)
-P19 <- rep(0, 10000)
-for (i in 1:10000) {
+P19 <- rep(0, 1e4)
+for (i in 1:1e4) {
 
   #
   P0 <- avg_06
@@ -120,27 +120,28 @@ for (i in 1:10000) {
 
 mean(P19)
 sd(P19)
+c(quantile(P19, .1), quantile(P19, .9))
 
 # computation of the standard error of the mean
 sem <- sd(P19) / sqrt(length(P19))
 # 95% confidence intervals of the mean
-c(mean(P19) - 2 * sem, mean(P19) + 2 * sem)
+c(mean(P19) - 1.96 * sem, mean(P19) + 1.96 * sem)
 
 ggplot(tibble(pred = P19), aes(pred)) +
   geom_histogram(fill = 'lightblue', color = 'blue') + 
   annotate("text", x = avg_06, 
-           y = 1600, label = "2006 Cost", color = 'red', fontface = 2) + 
-  annotate("segment", x = avg_06, xend = avg_06, y = 0, yend = 1575, colour = "red", size = 1) + 
+           y = 1825, label = "2006 Cost", color = 'red', fontface = 2) + 
+  annotate("segment", x = avg_06, xend = avg_06, y = 0, yend = 1800, colour = "red", size = 1) + 
   theme_bw() +
   labs(x = "Final Cost Possibilities (in thousands of dollars)", 
        y = "Frequency of Possibilites", 
        title = "2019 Cost Change Distribution using Normal Distribution") +
   theme(plot.title = element_text(hjust = 0.5, face = 'bold', size = 14)) +
-  scale_x_continuous(limits = c(0, 14000))
+  scale_x_continuous(limits = c(0, 17000))
 
 hist(P19, breaks = 35, main = "2006-2018 Cost Change Distribution", xlab = "Final Value")
 abline(v = 1000, col = "red", lwd = 2)
-mtext("2006 Cost", at = mean(combined$cost), col = "red")
+mtext("2006 Cost", at = avg_06, col = "red")
 
 
 
@@ -182,23 +183,23 @@ for (i in 1:10000) {
 
 mean(P19_kde)
 sd(P19_kde)
-
+max(P19_kde)
 # computation of the standard error of the mean
 sem_kde <- sd(P19_kde) / sqrt(length(P19_kde))
 # 95% confidence intervals of the mean
-c(mean(P19_kde) - 2 * sem_kde, mean(P19_kde) + 2 * sem_kde)
+c(mean(P19_kde) - 1.96 * sem_kde, mean(P19_kde) + 1.96 * sem_kde)
 
 ggplot(tibble(pred = P19_kde), aes(pred)) +
   geom_histogram(fill = 'lightblue', color = 'blue') + 
   annotate("text", x = avg_06, 
-           y = 1600, label = "2006 Cost", color = 'red', fontface = 2) + 
-  annotate("segment", x = avg_06, xend = avg_06, y = 0, yend = 1575, colour = "red", size = 1) + 
+           y = 1775, label = "2006 Cost", color = 'red', fontface = 2) + 
+  annotate("segment", x = avg_06, xend = avg_06, y = 0, yend = 1750, colour = "red", size = 1) + 
   theme_bw() +
   labs(x = "Final Cost Possibilities (in thousands of dollars)", 
        y = "Frequency of Possibilites", 
        title = "2019 Cost Change Distribution using KDE") +
   theme(plot.title = element_text(hjust = 0.5, face = 'bold', size = 14)) +
-  scale_x_continuous(limits = c(0, 14000))
+  scale_x_continuous(limits = c(0, 17000))
 
 hist(P19_kde, breaks = 35, main = "2006-2018 Cost Change Distribution using KDE", xlab = "Final Value")
 abline(v = 1000, col = "red", lwd = 2)
@@ -232,11 +233,11 @@ qqnorm(P5)
 qqline(P5)
 car::qqPlot(P5)
 
-ggplot(tibble(pred = P5), aes(sample = pred)) +
-  stat_qq(color = 'blue') + 
-  stat_qq_line(color = 'darkred') +
+ggplot(combined, aes(sample = cost)) +
+  stat_qq(color = 'blue', size = 2) + 
+  stat_qq_line(color = 'darkred', size = 1.5) +
   theme_bw() +
-  labs(x = "Theoretical Quantiles", 
+  labs(x = "Theoretical Quantiles from Normal Distribution", 
        y = "Simulated Costs (in thousands of dollars)", 
        title = "Quantile - Quantile Plot for Costs between 2007-2012") +
   theme(plot.title = element_text(hjust = 0.5, face = 'bold', size = 12))
