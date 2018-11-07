@@ -1,14 +1,19 @@
+# Decided I need to get a baseline for what a good MSE might be.  I want to first build a simple linear model with no interactions or higher order terms with al the variables.  Then I will explore more complex models.
+
+# libraries
 library(tidyverse)
 library(magrittr)
 library(recipes)
 library(rsample)
-
+library(MLmetrics)
+# the training and test data
 load("dm/data/MLProjectData.RData")
 
-# making all variables factors instead of logical
+# making all logicals into factors factors 
 MLProjectData %<>% 
-  modify_if(is.logical, as.factor) %>% 
-  glimpse()
+  modify_if(is.logical, as.factor)
+
+
 # building recipes ####
 # bake a recipe with dummy variables
 rec_obj <- recipe(target ~ ., data = MLProjectData)
@@ -35,11 +40,16 @@ y_train <- train_v2$target
 
 # validation data
 valid <- assessment(valid_split)
-x_test <- valid[setdiff(names(valid), "target")] %>% 
-  as.matrix
-y_test <- valid$target
+x_valid <- valid[setdiff(names(valid), "target")]
+y_valid <- valid$target
 
-# basic model in glmnet
-x <- x_train  %>% 
-  as.matrix
-y <- y_train
+# Basic model ####
+simple_mod <- lm(target ~ . , data = train_v2)
+summary(simple_mod)
+
+pred_valid <- predict(simple_mod, x_valid)
+
+# exploring rank deficiency error which could indicate collinearity
+length(simple_mod$coefficients) > simple_mod$rank
+
+MSE(pred_valid, y_valid) # 2.147556

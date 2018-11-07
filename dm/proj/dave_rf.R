@@ -46,6 +46,8 @@ valid <- assessment(valid_split)
 x_test <- valid[setdiff(names(valid), "target")]
 y_test <- valid$target
 
+
+
 rf_oob_comp <- randomForest(
   formula = target ~ .,
   data    = train_v2,
@@ -284,12 +286,12 @@ print(grid_perf)
 best_model_id <- grid_perf@model_ids[[1]]
 best_model <- h2o.getModel(best_model_id)
 
-# Now let’s evaluate the model performance on a test set
-test.h2o <- as.h2o(test_data)
+# Now let’s evaluate the model performance on a validaiton set
+test.h2o <- as.h2o(valid)
 best_model_perf <- h2o.performance(model = best_model, newdata = test.h2o)
 
 # RMSE of best model
-h2o.mse(best_model_perf) %>% sqrt()
+h2o.mse(best_model_perf) %>% sqrt() 1.284694
 
 # predict new values
 pred_h2o <- predict(best_model, test.h2o)

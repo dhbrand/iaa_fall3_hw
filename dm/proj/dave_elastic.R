@@ -179,4 +179,6 @@ mse6 <- mean((y_test - yhat6)^2)
 mse7 <- mean((y_test - yhat7)^2)
 mse8 <- mean((y_test - yhat8)^2)
 mse9 <- mean((y_test - yhat9)^2)
-mse10 <- mean((y_test - yhat10)^2)
+(mse10 <- mean((y_test - yhat10)^2))
+
+# all the MSE's are  2.087041
