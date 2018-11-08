@@ -109,8 +109,8 @@ for (i in 1:1e4) {
     Pt <- Pt * (1 - r)
   }
 
-  # 2016-2018
-  for (j in 1:3) {
+  # 2016-2019
+  for (j in 1:4) {
     r <- rtriangle(1, a = 0.02, b = 0.06, c = 0.05)
     Pt <- Pt * (1 + r)
   }
@@ -130,14 +130,14 @@ c(mean(P19) - 1.96 * sem, mean(P19) + 1.96 * sem)
 ggplot(tibble(pred = P19), aes(pred)) +
   geom_histogram(fill = 'lightblue', color = 'blue') + 
   annotate("text", x = avg_06, 
-           y = 1825, label = "2006 Cost", color = 'red', fontface = 2) + 
-  annotate("segment", x = avg_06, xend = avg_06, y = 0, yend = 1800, colour = "red", size = 1) + 
+           y = 1600, label = "2006 Cost", color = 'red', fontface = 2) + 
+  annotate("segment", x = avg_06, xend = avg_06, y = 0, yend = 1575, colour = "red", size = 1) + 
   theme_bw() +
   labs(x = "Final Cost Possibilities (in thousands of dollars)", 
        y = "Frequency of Possibilites", 
        title = "2019 Cost Change Distribution using Normal Distribution") +
   theme(plot.title = element_text(hjust = 0.5, face = 'bold', size = 14)) +
-  scale_x_continuous(limits = c(0, 17000))
+  scale_x_continuous(limits = c(0, 15000))
 
 hist(P19, breaks = 35, main = "2006-2018 Cost Change Distribution", xlab = "Final Value")
 abline(v = 1000, col = "red", lwd = 2)
@@ -172,8 +172,8 @@ for (i in 1:10000) {
     Pt <- Pt * (1 - r)
   }
 
-  # 2016-2018
-  for (j in 1:3) {
+  # 2016-2019
+  for (j in 1:4) {
     r <- rtriangle(1, a = 0.02, b = 0.06, c = 0.05)
     Pt <- Pt * (1 + r)
   }
@@ -192,14 +192,14 @@ c(mean(P19_kde) - 1.96 * sem_kde, mean(P19_kde) + 1.96 * sem_kde)
 ggplot(tibble(pred = P19_kde), aes(pred)) +
   geom_histogram(fill = 'lightblue', color = 'blue') + 
   annotate("text", x = avg_06, 
-           y = 1775, label = "2006 Cost", color = 'red', fontface = 2) + 
-  annotate("segment", x = avg_06, xend = avg_06, y = 0, yend = 1750, colour = "red", size = 1) + 
+           y = 1500, label = "2006 Cost", color = 'red', fontface = 2) + 
+  annotate("segment", x = avg_06, xend = avg_06, y = 0, yend = 1475, colour = "red", size = 1) + 
   theme_bw() +
   labs(x = "Final Cost Possibilities (in thousands of dollars)", 
        y = "Frequency of Possibilites", 
        title = "2019 Cost Change Distribution using KDE") +
   theme(plot.title = element_text(hjust = 0.5, face = 'bold', size = 14)) +
-  scale_x_continuous(limits = c(0, 17000))
+  scale_x_continuous(limits = c(0, 15000))
 
 hist(P19_kde, breaks = 35, main = "2006-2018 Cost Change Distribution using KDE", xlab = "Final Value")
 abline(v = 1000, col = "red", lwd = 2)
