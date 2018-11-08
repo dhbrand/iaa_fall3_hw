@@ -1,5 +1,4 @@
-## ----------------------------------------------------------------------------
-## Top ####
+## Top ####--------------------------------------------------------------------
 library(ggmap)
 library(tidytext)
 library(tidyverse)
@@ -51,7 +50,7 @@ listing_k <-data.frame(listing_sub, lat = lat, lon = lon)
 ## ----------------------------------------------------------------------------
 # retriving a map of boston that we can plot our segments on later
 boston <- get_map(location = "Boston", zoom = 12)
-
+#write_rds(boston, "clust/data/boston.rds")
 
 ## ----------------------------------------------------------------------------
 ## Sentiment Clustering ####
@@ -107,7 +106,9 @@ clusters.c <- hclust(dist(scaled_mat), method = "complete")
 clusters.s <- hclust(dist(scaled_mat), method = "single")
 clusters.s <- hclust(dist(scaled_mat), method = "average")
 
-plot(clusters.c)
+plot(clusters.c, labels = FALSE)
+plot(clusters.a, labels = FALSE)
+plot(clusters.s, labels = FALSE)
 combined$clus <- cutree(clusters.c, 6) # it looks like 6 clusters is reasonable
 
 clu1 <- combined %>% filter(clus == 1)
@@ -119,13 +120,21 @@ clu6 <- combined %>% filter(clus == 6)
 
 ## ----------------------------------------------------------------------------
 # plot two interesting clusters
-ggmap(map, fullpage = TRUE) +
-  geom_point(data = clu4, aes(x = lon, y = lat), color = "red", size = 2)
+ggmap(boston) +
+  geom_point(data = clu2, aes(x = lon, y = lat), color = "red", size = 2)
 
 ggmap(map, fullpage = TRUE) +
   geom_point(data = clu5, aes(x = lon, y = lat), color = "red", size = 2)
 
 ## ----------------------------------------------------------------------------
+## 
+## 
+words2 <- new_reviews %>%
+  right_join(clu2, "listing_id") %>%
+  select(word) %>%
+  count(word, sort = TRUE) %>%
+  filter(n < 150)
+
 words4 <- new_reviews %>%
   right_join(clu4, "listing_id") %>%
   select(word) %>%
@@ -143,6 +152,12 @@ words5 <- new_reviews %>%
 ## ----------------------------------------------------------------------------
 # building wordclouds to look at unique words which define cluster memberships
 set.seed(555)
+wordcloud(
+  words = words2$word, freq = words4$n, min.freq = 150,
+  max.words = 100, random.order = FALSE, rot.per = 0.35,
+  colors = brewer.pal(8, "Dark2")
+)
+
 wordcloud(
   words = words4$word, freq = words4$n, min.freq = 150,
   max.words = 100, random.order = FALSE, rot.per = 0.35,
