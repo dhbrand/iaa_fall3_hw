@@ -233,13 +233,13 @@ qqnorm(P5)
 qqline(P5)
 car::qqPlot(P5)
 
-ggplot(combined, aes(sample = cost)) +
+ggplot(combined, aes(sample = ret)) +
   stat_qq(color = 'blue', size = 2) + 
   stat_qq_line(color = 'darkred', size = 1.5) +
   theme_bw() +
   labs(x = "Theoretical Quantiles from Normal Distribution", 
        y = "Simulated Costs (in thousands of dollars)", 
-       title = "Quantile - Quantile Plot for Costs between 2007-2012") +
+       title = "Quantile - Quantile Plot for Cost Changes between 1991-2006") +
   theme(plot.title = element_text(hjust = 0.5, face = 'bold', size = 12))
 
 

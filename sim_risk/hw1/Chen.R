@@ -27,7 +27,7 @@ hist_return = as.numeric(c(valid$Oil_Return,valid$Gas_Return,valid$Well_Return))
 hist_cost = c(valid$Cost_per_Crude_Oil,valid$Cost_per_Natural_Gas,valid$Cost_per_Dry_Well)
 mean(hist_cost)
 # --------------- normal distribution simulation ---------
-
+length(hist_return)
 # QQ PLOT - passed normality assumption
 qqnorm(hist_return)
 qqline(hist_return, col = "steelblue", lwd = 2)
@@ -108,6 +108,8 @@ sd(cost_kde)
 
 hist(cost_kde, breaks=50, main='Year 2019 Cost Distribution (KDE)', xlab='Final Cost')
 
+# error of margin
+sem_kde <- 1.96*sd(cost_kde) / sqrt(length(cost_kde))
 
 # r1 <- rtriangle(n=10000, a = -0.22, b = -0.07, c = -0.0917)
 # hist(1+r1, breaks=50, main='Year 2019 Cost Distribution (KDE)', xlab='Final Cost')
