@@ -35,5 +35,6 @@ dm/ml/
 # temporary office files
 *~$*
 
+ggmap_api.R
 
 
