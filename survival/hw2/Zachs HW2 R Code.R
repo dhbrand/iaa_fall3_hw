@@ -2,7 +2,7 @@
 #                            #
 #       Orange Team 4        #
 #                            #
-#        Homework 2          #
+#        Homework 1          #
 #                            #
 #                            #
 #    Zachary Wasielewski     #
@@ -75,15 +75,67 @@ exp(coef(fit1))
     # interpretation of trashrack:
         # For pumps who had a trashrack, the predicted flooding time was 0.79 times shorter than those who didn't
 
-## Log Norm
-fit2 <- survreg(Surv(hour, reason == 1) ~ backup + bridgecrane + servo 
-               + trashrack + elevation + age + slope, data = katrina, dist = "lognorm")
-exp(coef(fit2))
-    # interpretation of age:
-        # The predicted time to flooding is 1.01 times shorter for every additional year of age
-    # interpretation of trashrack:
-        # For pumps who had a trashrack, the predicted flooding time was 0.77 times shorter than those who didn't
 
+#picking our 20 pumps and their upgrade (servo or backup)
+neither = katrina[ which(katrina$backup == 0 & katrina$servo  == 0 & katrina$reason == 1) ]
+neither.fit = survfit(Surv(hour, survive==0)~1, data = neither)
+
+both = katrina[ which(katrina$backup == 1 & katrina$servo  == 1 & katrina$reason == 1) ]
+both.fit = survfit(Surv(hour, survive==0)~1, data = both)
+
+no_backup = katrina[ which(katrina$backup == 0 & katrina$servo  == 1 & katrina$reason == 1) ]
+no_backup.fit = survfit(Surv(hour, survive==0)~1, data = no_backup)
+
+no_servo = katrina[ which(katrina$backup == 1 & katrina$servo  == 0 & katrina$reason == 1) ]
+no_servo.fit = survfit(Surv(hour, survive==0)~1, data = no_servo)
+
+fit.list = list(
+  neither = neither.fit, Backup_with_No_Servo = no_servo.fit, Servo_with_No_Backup = no_backup.fit#, Servo_and_Backup = both.fit
+)
+ggsurv = ggsurvplot(fit.list, data = katrina, censor = FALSE,
+                    combine = TRUE, keep.data = TRUE, 
+                    title = 'Figure 1: Pump Survival Curves for Flooding by Missing Upgrade', font.title = 11,
+                    legend = 'right', legend.title = 'Upgrades:',
+                    legend.labs = cbind('Neither','Backup','Servo'
+                                        #, 'Both'
+                                        ),
+                    xlab = 'Hour', ylab = 'Survival Probability')
+ggsurv
+# it looks like going from having neither to having a servo causes the biggest boost in survival
+    # this supports our coefficients
+
+
+#testing survivability with sample from of pumps with either no servo or no backup
+kat_no_servo <- katrina %>%
+  mutate(old_lp = predict(fit1, type = "lp"),
+         ID = row_number()) %>%
+  dplyr::filter(reason == 1, servo == 0, backup == 0) %>%
+  mutate(old_time = hour,
+         surv_prob = 1 - psurvreg(old_time,
+                                  mean = old_lp,
+                                  scale = fit1$scale,
+                                  distribution = fit1$dist),
+         old_serv = servo,
+         servo = old_serv + 1)
+
+# now with that dataset, i need to find their new time
+results <- kat_no_servo %>%
+  mutate(new_lp = predict(fit1, newdata = kat_no_servo, type = "lp"),
+         new_time = qsurvreg(1 - surv_prob,
+                             mean = new_lp,
+                             scale = fit1$scale,
+                             distribution = fit1$dist),
+         pred_time_diff = new_time - old_time) %>%
+  select(ID, surv_prob, old_time, new_time, pred_time_diff)
+head(results)
+
+
+
+
+
+#######################
+########## OLD WAY
+#######################
 
 ## Find pumps that failed due to flooding early and figure our which didnt have a backup or servomechanism (or ones that are newer with low elevation)
     # find top 20 that fail early due to 
