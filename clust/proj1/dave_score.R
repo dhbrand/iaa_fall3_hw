@@ -377,7 +377,7 @@ fviz_eig(dist_pca, addlabels = TRUE)
 fviz_cos2(dist_pca, choice = 'var', axes = 1:5)
 #  looks really good at capture all the attraction distances
 
-# getting the scores for the first 3 components
+# getting the scores for the first 5 components
 princomp_var <- get_pca_ind(dist_pca)
 princomp_1_5 <- princomp_var$coord[,1:5] 
 
@@ -450,6 +450,12 @@ words11 <- new_reviews %>%
   count(word, sort = TRUE) %>%
   filter(n < 150)
 
+words8 <- new_reviews %>%
+  right_join(clu8, "listing_id") %>%
+  select(word) %>%
+  count(word, sort = TRUE) %>%
+  filter(n < 150)
+
 # building wordclouds to look at unique words which define cluster memberships
 set.seed(555)
 wordcloud(
@@ -459,7 +465,7 @@ wordcloud(
 )
 
 wordcloud(
-  words = words4$word, freq = words4$n, min.freq = 150,
+  words = words5$word, freq = words5$n, min.freq = 150,
   max.words = 100, random.order = FALSE, rot.per = 0.35,
   colors = brewer.pal(8, "Dark2")
 )
@@ -476,16 +482,67 @@ wordcloud(
   colors = brewer.pal(8, "Dark2")
 )
 
+wordcloud(
+  words = words8$word, freq = words8$n, min.freq = 150,
+  max.words = 100, random.order = FALSE, rot.per = 0.35,
+  colors = brewer.pal(8, "Dark2")
+)
 # looking at the avg sentiment per cluster 
 
 combined %>% 
   group_by(clus) %>% 
-  summarise(avg_sent = mean(avg))
+  summarise(avg_sent = mean(avg),
+            avg_bed_rate = mean(bed_nt_rate), 
+            avg_avail = mean(availability_365),
+            n = n(), 
+            freq = n/ nrow(combined), 
+            avail_rate = avg_bed_rate*(365- avg_avail)
+            ) %>% 
+  arrange(avg_sent)
 
+cluster_stats <- function(dataframe){
+  unique_clusters = unique(dataframe$clus)
+  temp = NULL
+  for(i in unique_clusters){
+    cluster_i = dataframe[which(dataframe$clus==i), 
+                          c('avg', 'clus', 'price', 'beds', 'review_scores_rating', 
+                            'review_scores_accuracy', 'review_scores_cleanliness', 'review_scores_checkin',
+                            'review_scores_communication', 'review_scores_location', 'review_scores_value')]
+    cluster_i$price_new = as.numeric(gsub("\\$", "", cluster_i$price))
+    cluster_i$beds[cluster_i$beds == 0] = NA
+    cluster_i$price_per_bed = cluster_i$price_new/cluster_i$beds
+    
+    avg_score = mean(cluster_i$avg, na.rm=TRUE)
+    avg_price_per_bed = mean(cluster_i$price_per_bed, na.rm=TRUE)
+    avg_beds = mean(cluster_i$beds, na.rm=TRUE)
+    avg_price = mean(cluster_i$price_new, na.rm=TRUE)
+    avg_rating = mean(cluster_i$review_scores_rating, na.rm=TRUE)
+    avg_accuracy = mean(cluster_i$review_scores_accuracy, na.rm=TRUE)
+    avg_cleanliness = mean(cluster_i$review_scores_cleanliness, na.rm=TRUE)
+    avg_checkin = mean(cluster_i$review_scores_checkin, na.rm=TRUE)
+    avg_communication = mean(cluster_i$review_scores_communication, na.rm=TRUE)
+    avg_location = mean(cluster_i$review_scores_location, na.rm=TRUE)
+    avg_value = mean(cluster_i$review_scores_value, na.rm=TRUE)
+    
+    
+    temp = rbind(temp, data.frame(cluster = i, 
+                                  "Average_Score" = avg_score, 
+                                  "Average_Price" = avg_price, 
+                                  "Average_Beds"  = avg_beds, 
+                                  "Average_Price_per_Bed" = avg_price_per_bed,
+                                  "Average_Rating" = avg_rating,
+                                  "Average_Accuracy" = avg_accuracy,
+                                  "Average_Cleanliness" = avg_cleanliness,
+                                  "Average_Checkin" = avg_checkin,
+                                  "Average_Communication" = avg_communication,
+                                  "Average_Location" = avg_location,
+                                  "Average_Value" = avg_value))
+  }
+  cluster_stats <<- temp
+}
 
-
-
-
+cluster_stats(combined)
+View(cluster_stats)
 
 
 
