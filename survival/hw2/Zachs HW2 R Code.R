@@ -34,7 +34,7 @@ fit_wb <- flexsurvreg(Surv(hour, reason==1) ~ backup + bridgecrane + servo
                       + trashrack + elevation + age + slope, data = katrina, dist = "weibull")
 
 plot(fit_wb, type = "cumhaz", ci = TRUE, conf.int = FALSE, las = 1, bty = "n",
-     xlab = "hour", ylab = "cumulative hazard", main = "weibull distribution")
+     xlab = "Hour", ylab = "Cumulative Hazard", main = "Weibull Distribution", xlim=c(0,50))
 
 
 ## Exponential
@@ -69,7 +69,8 @@ plot(fit_llogis, type = "cumhaz", ci = TRUE, conf.int = FALSE, las = 1, bty = "n
 ## Weibull
 fit1 <- survreg(Surv(hour, reason == 1) ~ backup + bridgecrane + servo 
                + trashrack + elevation + age + slope, data = katrina, dist = "weibull")
-exp(coef(fit1)) 
+exp(coef(fit1))
+summary(fit1)
     # interpretation of age:
         # The predicted time to flooding is 1.06 times shorter for every additional year of age
     # interpretation of trashrack:
@@ -94,12 +95,14 @@ fit.list = list(
 )
 ggsurv = ggsurvplot(fit.list, data = katrina, censor = FALSE,
                     combine = TRUE, keep.data = TRUE, 
-                    title = 'Figure 1: Pump Survival Curves for Flooding by Missing Upgrade', font.title = 11,
+                    title = 'Survival Curves for Flooding by Missing Upgrade', font.title = 12,
                     legend = 'right', legend.title = 'Upgrades:',
                     legend.labs = cbind('Neither','Backup','Servo'
                                         #, 'Both'
                                         ),
-                    xlab = 'Hour', ylab = 'Survival Probability')
+                    xlab = 'Hour', ylab = 'Survival Probability',
+                    break.x.by = 6,
+                    ggtheme = theme_bw())
 ggsurv
 # it looks like going from having neither to having a servo causes the biggest boost in survival
     # this supports our coefficients
