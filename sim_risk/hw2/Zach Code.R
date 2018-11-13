@@ -53,13 +53,13 @@ hist(cost_dry)
 
 
 ## Wet Well Cost Simulation:
-cost_wet = rep(0,10)
-rev_wet = rep(0,10)
+cost_wet = rep(0,10000)
+rev_wet = rep(0,10000)
 set.seed(404)
 R <- matrix(data=cbind(1, 0.64, 0.64, 1), nrow=2)
 U <- t(chol(R))
 
-for (ii in 1:10){
+for (ii in 1:10000){
   ## Year 0 Costs:
   acre_cost = 960*rnorm(n=1, mean=600, sd=50)
   seismic_cost = 43000*rnorm(n=1, mean=3, sd=0.35)
@@ -69,7 +69,7 @@ for (ii in 1:10){
   
   ## Year 1 & Beyond
   #lifetime of well rates
-  royalty_rate = rlnorm(n=1, mean=0.25, sd=0.02)
+  royalty_rate = rnorm(n=1, mean=0.25, sd=0.02)
   
   #initial rates
   init_rate = rlnorm(n=2, meanlog=6, sdlog=0.28)
@@ -85,7 +85,7 @@ for (ii in 1:10){
   init_rate = final.Corr.r[1,1] # first column is initial rates
   decline_rate = final.Corr.r[1,2] # second column is decline rates (CORRELATED!!)
   
-  #build revenue & cost for each year
+  #build revenue & cost compounding for each year
   total_cost = init_cost
   total_rev =0
   
@@ -93,7 +93,7 @@ for (ii in 1:10){
   for (jj in 2019:2033){
     #find end rate and oil volume for this year
     end_rate = (1-decline_rate)*init_rate
-    oil_vol= 365*(init_rate+decline_rate)/2
+    oil_vol= 365*(init_rate+end_rate)/2
     
     #obtain price from sheet (high, low, mean could be moved outside for loop for time saving)
     high = price_proj$High_Price[which(price_proj$Year == jj)]
@@ -125,6 +125,7 @@ for (ii in 1:10){
     init_rate = end_rate
   }
   cost_wet[ii]=total_cost
-  rev_wet[ii]=total_rev
+  rev_wet[ii]=total_rev-total_cost
 }
-
+hist(cost_wet)
+hist(rev_wet)
