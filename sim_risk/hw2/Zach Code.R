@@ -11,6 +11,10 @@ library(car)
 library(triangle)
 library(ks)
 library(lubridate)
+library(ggplot2)
+
+## turn off exponential notation
+options(scipen = 999)
 
 ## Miscellaneous Functions Used
 standardize <- function(x){
@@ -127,5 +131,15 @@ for (ii in 1:10000){
   cost_wet[ii]=total_cost
   rev_wet[ii]=total_rev-total_cost
 }
-hist(cost_wet)
-hist(rev_wet)
+
+
+hist(rev_wet, 
+     breaks=100,
+     main="Histogram of Wet Well Revenue Possibilities",
+     xlab="Revenue",
+     border="blue",
+     col="grey",
+     xlim=c(-5000000, 44000000),
+     las=1,
+     )
+axis(side=1, at=seq(-5000000, 44000000, 5000000))
