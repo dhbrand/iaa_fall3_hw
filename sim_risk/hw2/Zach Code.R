@@ -28,7 +28,8 @@ library(ggplot2)
   }
 
 ## Reading and Cleaning Data
-  path = "C:/Users/zacha/Documents/MSA/Fall 2018/Analytic Methods/Simulation/Data/Analysis_Data.xlsx"
+  path = "sim_risk/data/Analysis_Data.xlsx"
+  # path = "C:/Users/zacha/Documents/MSA/Fall 2018/Analytic Methods/Simulation/Data/Analysis_Data.xlsx"
   excel_sheets(path)
   drill = read_excel(path,sheet = "Drilling Cost",skip = 2)
   colnames(drill) = c("Year","Cost_per_Crude_Oil","Cost_per_Natural_Gas","Cost_per_Dry_Well"
@@ -59,9 +60,10 @@ library(ggplot2)
 ## Wet Well Cost Simulation:
   
 #setup components of simulation
-  num=10000
+  num=100000 ## number of simulations
   cost_wet = rep(0,num)
   rev_wet = rep(0,num)
+  NPV_sim = rep(0,num)
   set.seed(404)
   R <- matrix(data=cbind(1, 0.64, 0.64, 1), nrow=2)
   U <- t(chol(R))
@@ -70,7 +72,7 @@ library(ggplot2)
   mid_vec = price_proj$Reference_Price[which(price_proj$Year >= 2019 & price_proj$Year <= 2033)]
 
   
-#random generate 10000 correlated initial and decline rates
+#random generate simulation num of correlated initial and decline rates
   #initial rates
     init_rate = rlnorm(n=num, meanlog=6, sdlog=0.28)
     decline_rate = runif(n=num, min=0.15, max=0.32)
@@ -85,7 +87,7 @@ library(ggplot2)
   
 
 #calculate costs and revenues for each year (15 year forecast)
-  for (ii in 1:10000){
+  for (ii in 1:num){
     ## Year 0 Costs:
       acre_cost = 960*rnorm(n=1, mean=600, sd=50)
       seismic_cost = 43000*rnorm(n=1, mean=3, sd=0.35)
@@ -102,7 +104,8 @@ library(ggplot2)
     #build revenue & cost compounding for each year
       total_cost = init_cost
       total_rev =0
-    
+      FNR = rep(0,15)
+      
     #for loop for all 15 years
     for (jj in 1:15){
       #find end rate and oil volume for this year
@@ -120,34 +123,52 @@ library(ggplot2)
         new_rev = revenue-NRI
         
       #calculate operating costs
-        op_cost_per_barrel = rlnorm(n=1, mean=2.25, sd=0.3)
+        op_cost_per_barrel = rnorm(n=1, mean=2.25, sd=0.3)
         op_cost=oil_vol*op_cost_per_barrel
         
       #calculate tax
         tax = new_rev*0.046
         
       #final cost & revenue for year
-        cost=tax+NRI+op_cost
+        cost=tax+NRI+op_cost+staff_cost
         total_cost=total_cost+cost
         final_rev = revenue-cost
         total_rev=total_rev+final_rev
         
       #reset initial
         init_rate = end_rate
+        
+      #FNR Storage
+        FNR[jj] = total_rev-total_cost
     }
+      
     cost_wet[ii]=total_cost
     rev_wet[ii]=total_rev-total_cost
+    
+    #NPV Calculation
+    NPV = -init_cost
+    for (i in 1:15){
+      NPV = NPV+(FNR[i]/((1+0.1)^i))
+    }
+    NPV_sim[ii]=NPV
   }
   
-  
-  hist(rev_wet, 
+## Print Histogram of Wet Well NPV
+  list_hist = hist(NPV_sim, breaks=100)
+  hist(NPV_sim, 
        breaks=100,
        main="Histogram of Wet Well Revenue Possibilities",
        xlab="Revenue",
        border="blue",
        col="grey",
-       xlim=c(-5000000, 20000000),
-       las=1,
+       las=1
   )
-  axis(side=1, at=seq(-5000000, 20000000, 5000000))
-  abline(v=mean(rev_wet), col="red")
+  abline(v=mean(NPV_sim), col="green")
+  abline(v=0, col="red")
+  text(mean(NPV_sim)+5000000, 0.95*max(list_hist$count), paste("Mean = ", round(mean(NPV_sim),2), sep=""), col = "green", adj =c(0,0))
+  text(5000000, 0.95*max(list_hist$count), "0", col = "red", adj = c(-0.1, -0.1))
+  
+## Key Stats
+  round(mean(NPV_sim),2) ## mean of wet well NPV
+  length(NPV_sim[which(NPV_sim<0)]) ## simulations where NPV below 0
+  (length(NPV_sim[which(NPV_sim<0)])/num)*100 ## percent of simulations below 0

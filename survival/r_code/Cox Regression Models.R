@@ -15,7 +15,7 @@ library(survminer)
 library(visreg)
 
 # load data
-recid <- read.csv("/your/data/folder/recid.csv", header = TRUE)
+recid <- read.csv("survival/data/recid.csv", header = TRUE)
 # create an ID variable: we'll need it later and you should probably always
 # have one for survival analysis anyway 
 recid$ID <- 1:nrow(recid)

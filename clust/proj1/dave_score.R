@@ -125,17 +125,47 @@ clu3 <- combined %>% filter(clus == 3)
 clu4 <- combined %>% filter(clus == 4)
 clu5 <- combined %>% filter(clus == 5)
 clu6 <- combined %>% filter(clus == 6)
+clu7 <- combined %>% filter(clus == 7)
 
 
-
-ggmap(boston) +
-  geom_point(data = clu2, aes(x = longitude, y = latitude), color = "red", size = 2)
-
-ggmap(map, fullpage = TRUE) +
-  geom_point(data = clu5, aes(x = longitude, y = latitude), color = "red", size = 2)
+cols = metafolio::gg_color_hue(13)
 
 
+clu2_center <- c(median(clu2$longitude), median(clu2$latitude))
+map2 <- get_map(location = clu2_center, zoom = 13, color = 'bw') 
+map2 %>% 
+  ggmap(., maprange = FALSE) +
+  geom_point(data = clu2, aes(x = longitude, y = latitude), color = cols[2], size = 2) +
+  labs(x = "Longitude", y = "Latitude", title = "Listing Locations in Cluster Two") +
+  theme(plot.title = element_text(hjust = 0.5, face = 'bold', size = 16),
+        axis.title = element_text(face = 'bold', size = '12'))
 
+clu3_center <- c(median(clu3$longitude), median(clu3$latitude))
+map3 <- get_map(location = clu3_center, zoom = 14, color = 'bw') 
+map3 %>% 
+  ggmap(., maprange = FALSE) +
+  geom_point(data = clu3, aes(x = longitude, y = latitude), color = cols[3], size = 2)+
+  labs(x = "Longitude", y = "Latitude", title = "Listing Locations in Cluster Three") +
+  theme(plot.title = element_text(hjust = 0.5, face = 'bold', size = 16),
+        axis.title = element_text(face = 'bold', size = '12'))
+
+clu5_center <- c(median(clu5$longitude), median(clu5$latitude))
+map5 <- get_map(location = clu5_center, zoom = 13, color = 'bw') 
+map5 %>% 
+  ggmap(., maprange = FALSE) +
+  geom_point(data = clu5, aes(x = longitude, y = latitude), color = cols[5], size = 2)+
+  labs(x = "Longitude", y = "Latitude", title = "Listing Locations in Cluster Five") +
+  theme(plot.title = element_text(hjust = 0.5, face = 'bold', size = 16),
+        axis.title = element_text(face = 'bold', size = '12'))
+
+clu7_center <- c(median(clu7$longitude), median(clu7$latitude))
+map7 <- get_map(location = clu7_center, zoom = 13, color = 'bw')
+map7 %>% 
+  ggmap(., maprange = FALSE) +
+  geom_point(data = clu7, aes(x = longitude, y = latitude), color = cols[7], size = 2)+
+  labs(x = "Longitude", y = "Latitude", title = "Listing Locations in Cluster Seven") +
+  theme(plot.title = element_text(hjust = 0.5, face = 'bold', size = 16),
+        axis.title = element_text(face = 'bold', size = '12'))
 # hierarchical wordcloud clusters -----------------------------------------
 
 words2 <- new_reviews %>%
@@ -144,8 +174,8 @@ words2 <- new_reviews %>%
   count(word, sort = TRUE) %>%
   filter(n < 150)
 
-words4 <- new_reviews %>%
-  right_join(clu4, "listing_id") %>%
+words3 <- new_reviews %>%
+  right_join(clu3, "listing_id") %>%
   select(word) %>%
   count(word, sort = TRUE) %>%
   filter(n < 150)
@@ -157,29 +187,38 @@ words5 <- new_reviews %>%
   count(word, sort = TRUE) %>%
   filter(n < 150)
 
+words7 <- new_reviews %>%
+  right_join(clu7, "listing_id") %>%
+  select(word) %>%
+  count(word, sort = TRUE) %>%
+  filter(n < 150)
 
 
 # building wordclouds to look at unique words which define cluster memberships
 set.seed(555)
 wordcloud(
-  words = words2$word, freq = words4$n, min.freq = 150,
-  max.words = 100, random.order = FALSE, rot.per = 0.35,
+  words = words2$word, freq = words2$n, min.freq = 150,
+  max.words = 120, random.order = FALSE, rot.per = 0.35,
   colors = brewer.pal(8, "Dark2")
 )
 
 wordcloud(
-  words = words4$word, freq = words4$n, min.freq = 150,
+  words = words3$word, freq = words3$n, min.freq = 150,
   max.words = 100, random.order = FALSE, rot.per = 0.35,
   colors = brewer.pal(8, "Dark2")
 )
 
-set.seed(555)
 wordcloud(
   words = words5$word, freq = words5$n, min.freq = 150,
-  max.words = 100, random.order = FALSE, rot.per = 0.35,
+  max.words = 120, random.order = FALSE, rot.per = 0.35,
   colors = brewer.pal(8, "Dark2")
 )
 
+wordcloud(
+  words = words7$word, freq = words7$n, min.freq = 150,
+  max.words = 120, random.order = FALSE, rot.per = 0.35,
+  colors = brewer.pal(8, "Dark2")
+)
 
 # attraction clustering w/ kmeans -----------------------------------------
 
