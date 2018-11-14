@@ -60,8 +60,9 @@ library(ggplot2)
   
 #setup components of simulation
   num=10000
-  cost_wet = rep(0,num)
-  rev_wet = rep(0,num)
+  cost_wet = rep(0,10000)
+  rev_wet = rep(0,10000)
+  NPV_sim = rep(0,10000)
   set.seed(404)
   R <- matrix(data=cbind(1, 0.64, 0.64, 1), nrow=2)
   U <- t(chol(R))
@@ -102,7 +103,8 @@ library(ggplot2)
     #build revenue & cost compounding for each year
       total_cost = init_cost
       total_rev =0
-    
+      FNR = rep(0,15)
+      
     #for loop for all 15 years
     for (jj in 1:15){
       #find end rate and oil volume for this year
@@ -120,34 +122,46 @@ library(ggplot2)
         new_rev = revenue-NRI
         
       #calculate operating costs
-        op_cost_per_barrel = rlnorm(n=1, mean=2.25, sd=0.3)
+        op_cost_per_barrel = rnorm(n=1, mean=2.25, sd=0.3)
         op_cost=oil_vol*op_cost_per_barrel
         
       #calculate tax
         tax = new_rev*0.046
         
       #final cost & revenue for year
-        cost=tax+NRI+op_cost
+        cost=tax+NRI+op_cost+staff_cost
         total_cost=total_cost+cost
         final_rev = revenue-cost
         total_rev=total_rev+final_rev
         
       #reset initial
         init_rate = end_rate
+        
+      #FNR Storage
+        FNR[jj] = total_rev-total_cost
     }
+      
     cost_wet[ii]=total_cost
     rev_wet[ii]=total_rev-total_cost
+    
+    #NPV Calculation
+    NPV = -init_cost
+    for (i in 1:15){
+      NPV = NPV+(FNR[i]/((1+0.1)^i))
+    }
+    NPV_sim[ii]=NPV
   }
   
   
-  hist(rev_wet, 
+  hist(NPV_sim, 
        breaks=100,
        main="Histogram of Wet Well Revenue Possibilities",
        xlab="Revenue",
        border="blue",
        col="grey",
-       xlim=c(-5000000, 20000000),
-       las=1,
+       las=1
   )
-  axis(side=1, at=seq(-5000000, 20000000, 5000000))
-  abline(v=mean(rev_wet), col="red")
+  abline(v=mean(NPV_sim), col="green")
+  abline(v=0, col="red")
+  text(mean(NPV_sim)+5000000,365, paste("Mean = ", mean(NPV_sim), sep=""), col = "green", adj =c(0,0))
+  text(5000000,365, "0", col = "red", adj = c(-0.1, -0.1))
