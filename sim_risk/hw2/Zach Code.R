@@ -227,7 +227,7 @@ for (ii in 1:num){
     init_rate = end_rate
     
     #FNR Storage
-    FNR[jj] = total_rev-total_cost
+    FNR[jj] = final_rev
   }
   
   cost_wet[ii]=total_cost
