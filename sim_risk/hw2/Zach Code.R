@@ -135,6 +135,13 @@ hist(cost_dry,
 abline(v=mean(cost_dry), col="green")
 text(1.05*mean(cost_dry), 0.95*max(list_hist$count), paste("Mean = ", round(mean(cost_dry),2), sep=""), col = "green", adj =c(0,0))
 
+# 95% CI
+sem <- sd(cost_dry) / sqrt(length(cost_dry)) # (4687988, 4748311)
+# 95% confidence intervals of the mean
+c(mean(cost_dry) - 1.96 * sem, mean(cost_dry) + 1.96 * sem)
+
+#cost at 99% quantile
+quantile(cost_dry, .99) # 9501966
 
 
 ## Wet Well Cost Simulation:
@@ -284,6 +291,9 @@ abline(v=0, col="red")
 text(mean(NPV_sim)+5000000, 0.95*max(list_hist$count), paste("Mean = ", round(mean(NPV_sim),2), sep=""), col = "green", adj =c(0,0))
 text(5000000, 0.95*max(list_hist$count), "0", col = "red", adj = c(-0.1, -0.1))
 
+es_values <- NPV_sim[NPV_sim <= quantile(NPV_sim, .01)]
+View(sort(es_values))
+mean(es_values)
 ## Key Stats
 round(mean(NPV_sim),2) ## mean of wet well NPV
 length(NPV_sim[which(NPV_sim<0)]) ## simulations where NPV below 0
