@@ -6,7 +6,7 @@ library(rsample)
 library(ranger)
 library(recipes)
 library(h2o)
-
+library(MLmetrics)
 load("dm/data/MLProjectData.RData")
 test <- read_csv("dm/data/testData.csv")
 
@@ -27,6 +27,7 @@ trained_rec <- rec_obj %>%
   step_dummy(all_predictors(), -all_numeric()) %>% 
   step_center(all_predictors())  %>%
   step_scale(all_predictors()) %>% 
+  step_pca(all_predictors(), threshold = .85) %>% 
   prep(training = MLProjectData)
 
 train_data <- bake(trained_rec, newdata = MLProjectData)
@@ -37,9 +38,9 @@ set.seed(123)
 valid_split <- initial_split(train_data, .8)
 
 # training data
-train_v2 <- analysis(valid_split)
-x_train <- train_v2[setdiff(names(train_v2), "target")]
-y_train <- train_v2$target
+train <- analysis(valid_split)
+x_train <- train[setdiff(names(train), "target")]
+y_train <- train$target
 
 # validation data
 valid <- assessment(valid_split)
@@ -50,7 +51,7 @@ y_valid <- valid$target
 # default RF model ####
 m1 <- randomForest(
   formula = target ~ .,
-  data    = train_v2
+  data    = train
 )
 m1
 
@@ -65,12 +66,15 @@ min(m1$mse) # 2.050811
 # RMSE of this optimal random forest
 sqrt(m1$mse[which.min(m1$mse)])
 
+# checking the mae on valid data set
+preds <- predict(m1, x_valid)
+MAE(preds, y_valid)
 
 # Out of Bag vs Validation Error ####
 # using default parameters
 rf_oob_comp <- randomForest(
   formula = target ~ .,
-  data    = train_v2,
+  data    = train,
   xtest   = x_valid,
   ytest   = y_valid
 )
@@ -90,6 +94,8 @@ tibble::tibble(
   geom_line() +
   scale_y_continuous(labels = scales::dollar) +
   xlab("Number of trees")
+
+
 
 
 # going to use the built in tuning function from randomForest, we are starting at 5 random variables per split and 
@@ -135,12 +141,19 @@ system.time(
 
 # hyperparameter grid search
 hyper_grid <- expand.grid(
-  mtry       = seq(20, 30, by = 2),
+  mtry       = seq(2, 20, by = 2),
   node_size  = seq(3, 9, by = 2),
   sampe_size = c(.55, .632, .70, .80),
   OOB_RMSE   = 0
 )
 
+hyper_grid <- expand.grid(
+  mtry       = seq(2, 20, by = 2),
+  num.trees  = seq(10, 1000, by = 250),
+  node_size  = seq(3, 9, by = 2),
+  sampe_size = c(.55, .632, .70, .80),
+  OOB_RMSE   = 0
+)
 # total number of combinations
 nrow(hyper_grid)
 ## [1] 96
@@ -150,7 +163,7 @@ for(i in 1:nrow(hyper_grid)) {
   # train model
   model <- ranger(
     formula         = target ~ ., 
-    data            = MLProjectData, 
+    data            = train, 
     num.trees       = 500,
     mtry            = hyper_grid$mtry[i],
     min.node.size   = hyper_grid$node_size[i],
@@ -167,8 +180,45 @@ hyper_grid %>%
   head(10)
 
 
+# buld model with recommended parameters and test number of trees
+num.trees <- data.frame(num.trees = seq(1, 2000, 250))
+for(i in 1:nrow(num.trees)) {
+  
+  # train model
+  model <- ranger(
+    formula         = target ~ ., 
+    data            = train, 
+    num.trees       = num.trees$num.trees[i],
+    mtry            = 2,
+    min.node.size   = 9,
+    sample.fraction = 0.700,
+    seed            = 123, 
+    importance = 'impurity'
+  )
+  
+  # add OOB error to grid
+  num.trees$OOB_RMSE[i] <- sqrt(model$prediction.error)
+}
 
 
+num.trees %>% 
+  dplyr::arrange(OOB_RMSE) %>%
+  head(10)
+
+# find the MAE on the predictions
+mod_rang <- ranger(
+  formula         = target ~ ., 
+  data            = train, 
+  num.trees       = 500,
+  mtry            = 2,
+  min.node.size   = 9,
+  sample.fraction = 0.700,
+  seed            = 123, 
+  importance = 'impurity'
+)
+
+preds <- predict(mod_rang, x_valid)
+MLmetrics::MAE(preds$predictions, y_valid)
 # make ranger compatible names
 names(train_data) <- make.names(names(train_data), allow_ = FALSE)
 
@@ -220,6 +270,7 @@ for(i in 1:nrow(hyper_grid_2)) {
 hyper_grid_2 %>% 
   dplyr::arrange(OOB_RMSE) %>%
   head(10)
+
 # buld model with recommended parameters
 model <- ranger(
   formula         = target ~ ., 
@@ -255,8 +306,8 @@ train.h2o <- as.h2o(train_data)
 
 # hyperparameter grid
 hyper_grid.h2o <- list(
-  ntrees      = seq(200, 500, by = 100),
-  mtries      = seq(1, 10, by = 1),
+  ntrees      = seq(200, 1000, by = 100),
+  mtries      = seq(2, 20, by = 2),
   sample_rate = c(.55, .632, .70, .80)
 )
 

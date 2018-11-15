@@ -66,7 +66,8 @@ combined_ret <- with(sub_dat, c(crud_oil_ret, nat_gas_ret, dry_ret))
 
 combined <- data.frame(year = sub_dat$year, cost = combined_cost, ret = as.numeric(combined_ret))
 
-avg_06 <- dplyr::select(combined, year, cost) %>% filter(year == 2006) %>% pull %>% mean
+avg_06 <- dplyr::select(combined, year, cost) %>% filter(year == 2006) %>% 
+mutate(cost = cost*1000) %>% pull %>% mean
 avg <- mean(combined$ret)
 stdev <- sd(combined$ret)
 P19 <- rep(0, 1e4)
@@ -104,10 +105,12 @@ for (ii in 1:10000){
   staff_cost = rtriangle(n=1, a = 172000, b = 279500, c = 215000)
   total_cost = acre_cost+seismic_cost+staff_cost
   
-  cost_dry[ii] = total_cost - Pt
+  cost_dry[ii] = total_cost + Pt
 }
-hist(cost_dry, breaks = 30)
-
+hist(cost_dry, breaks = 100)
+abline(v=mean(cost_dry), col="red")
+text(mean(cost_dry) ,0.95*max(list_hist$count), paste("Mean = ", round(mean(cost_dry),2), sep=""), col = "green", adj =c(0,0))
+text(5000000, 0.95*max(list_hist$count), "0", col = "red", adj = c(-0.1, -0.1))
 
 
 ## Wet Well Cost Simulation:
