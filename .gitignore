@@ -38,3 +38,5 @@ dm/ml/
 ggmap_api.R
 
 
+*.ipynb_checkpoints*
+

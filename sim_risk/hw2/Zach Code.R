@@ -109,6 +109,21 @@ for (ii in 1:10000){
   
   cost_dry[ii] = total_cost + Pt
 }
+
+## Print Histogram of Wet Well NPV
+avg_dry <- mean(cost_dry)
+ggplot(tibble(pred = cost_dry), aes(pred)) +
+  geom_histogram(fill = 'lightblue', color = 'blue', bins = 60) + 
+  theme_bw() +
+  annotate("text", x = avg_dry, 
+           y = 800, label = "Mean Cost = $4.7 million", color = 'red', fontface = 2) + 
+  annotate("segment", x = avg_dry, xend = avg_dry, y = 0, yend = 775, colour = "red", size = 1.5) + 
+  labs(x = "Cost(in millions of dollars)", 
+       y = "Frequency", 
+       title = "Histogram of Dry Well Cost Possibilities") +
+  theme(plot.title = element_text(hjust = 0.5, face = 'bold', size = 14)) +
+  scale_x_continuous(limits = c(0, 15e6), breaks = c(0, 4e6, 8e6, 12e6), labels = c(0, 4, 8, 12))
+
 list_hist = hist(cost_dry, breaks=100)
 hist(cost_dry, 
      breaks = 100,
@@ -242,6 +257,19 @@ for (ii in 1:num){
 }
 
 ## Print Histogram of Wet Well NPV
+avg_npv <- mean(NPV_sim)
+ggplot(tibble(pred = NPV_sim), aes(pred)) +
+  geom_histogram(fill = 'lightblue', color = 'blue', bins = 60) + 
+  theme_bw() +
+  annotate("text", x = avg_npv, 
+           y = 6900, label = "Mean NPV = $12.5 million", color = 'red', fontface = 2) + 
+  annotate("segment", x = avg_npv, xend = avg_npv, y = 0, yend = 6800, colour = "red", size = 1.5) + 
+  labs(x = "Revenue(in millions of dollars)", 
+       y = "Frequency", 
+       title = "Histogram of Wet Well Revenue Possibilities") +
+  theme(plot.title = element_text(hjust = 0.5, face = 'bold', size = 14)) +
+  scale_x_continuous(limits = c(-1e7, 4e7), breaks = c(-1e7, 0, 1e7, 2e7, 3e7), labels = c(-10, 0, 10, 20, 30))
+
 list_hist = hist(NPV_sim, breaks=100)
 hist(NPV_sim, 
      breaks=100,
