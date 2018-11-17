@@ -1,0 +1,39 @@
+######################Survival HW3#####################
+library(survival)
+library(survminer)
+library(visreg)
+library(flexsurv)
+library(muhaz)
+library(tidyverse)
+katrina <- read.csv('Survival Analytics\\katrina.csv')
+kat_long <- katrina[,-(1:8)]
+#############The Loop###################
+final <- data.frame(ID = NULL, Start = NULL, Stop = NULL, Motor = NULL, Event = NULL, New = NULL)
+result <- rep(0,5)
+for (ID in 1:nrow(katrina)){
+  result[1] <- ID
+  for (ii in 12:47){
+    result[2:3] <- 0
+    result[2] <- ii
+    result[3] <- ii + 1
+    kat_col <- katrina[ID,(ii-11):ii]
+    if (sum(kat_col, na.rm = TRUE) == 12){
+        result[4] <- 1
+    }else{
+        result[4] <- 0
+    }
+    result[5] <- ifelse(katrina$reason[ID] %in% c(2,3) & katrina$hour[ID] == result[3],1,0)
+    final <- rbind(final,result)
+    if(result[5] == 1){
+      break
+    }
+    }
+}
+names(final) <- c("ID","Start","Stop","Motor","Survive2")
+katrina$ID <- seq(1,770)
+combined <- inner_join(final,katrina,by=c("ID")) %>%
+  select(-starts_with('h'))
+################Model######################
+#The new dataset has a new response variable that has the appropriately sensored obs called Survival 2
+cox_mod = coxph(Surv(time=Stop, event=Survive2) ~ backup + bridgecrane + servo + 
+                  trashrack + elevation + slope + age, data=combined)
