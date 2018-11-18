@@ -34,6 +34,17 @@ katrina$ID <- seq(1,770)
 combined <- inner_join(final,katrina,by=c("ID")) %>%
   select(-starts_with('h'))
 ################Model######################
-#The new dataset has a new response variable that has the appropriately sensored obs called Survival 2
-cox_mod = coxph(Surv(time=Stop, event=Survive2) ~ backup + bridgecrane + servo + 
-                  trashrack + elevation + slope + age, data=combined)
+##Previous model from the first two points
+cox_mod1 = coxph(Surv(time=hour, event=reason %in% c(2, 3)) ~ backup + bridgecrane + servo + 
+                   trashrack + elevation + slope + age, data=katrina)
+summary(cox_mod1)
+#The new dataset has a new response variable that has the appropriately sensored obs called Survival2 
+cox_mod1 = coxph(Surv(time=hour, event=reason %in% c(2, 3)) ~ backup + bridgecrane + servo + 
+                  trashrack + elevation + slope + age, data=katrina)
+#The time variable is Stop and the new response with the altered failure reasons is called Survive2
+#See line 25 for the logic 
+cox_mod2 = coxph(Surv(time=Stop, event=Survive2) ~ backup + bridgecrane + servo + 
+                  trashrack + elevation + slope + age + Motor, data=combined)
+summary(cox_mod2)
+##The p-value for Motor is 0.1727, thus I would conclude that whether the motor of the pump was on for 12 hours has no significant
+#effect on the failure of the pump. 
