@@ -75,6 +75,8 @@ prop_plot +
   geom_text(aes(x=ES-0.08, label="5% CVaR: 0.531", y=200), colour="red", angle=0) 
 
 avg_hydro = mean(hydro)
+sd(hydro)
+sd(hydro)
 hydro_plot = ggplot(tibble(pred = hydro), aes(pred)) +
   geom_histogram(fill = 'lightblue', color = 'blue', bins = 60) + 
   ggplot2::annotate("text", x = avg_hydro-0.03, 
@@ -88,6 +90,7 @@ hydro_plot = ggplot(tibble(pred = hydro), aes(pred)) +
   
 
 avg_resv = mean(resv)
+sd(resv)
 resv_plot = ggplot(tibble(pred = resv), aes(pred)) +
   geom_histogram(fill = 'lightblue', color = 'blue', bins = 60) + 
   ggplot2::annotate("text", x = avg_resv, 
@@ -107,3 +110,5 @@ hist(hydrocarbon)
 
 # bernoulli distribution
 hist(rbinom(10000, 1, 0.78))
+
+hist(runif(10000,10,30))
