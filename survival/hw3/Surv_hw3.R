@@ -37,7 +37,7 @@ katrina$ID = 1:nrow(katrina)
 
 ## RECALL: Our goal is to model motor and surge failures together, censor all other reasons
 # create an aft model to compare with the cox model
-aft_mod = flexsurvreg(Surv(time=hour, event=reason %in% c(2, 3)) ~ backup + bridgecrane + servo +
+aft_mod = survreg(Surv(time=hour, event=reason %in% c(2, 3)) ~ backup + bridgecrane + servo +
                         trashrack + elevation + slope + age, data=katrina, dist="weibull")
 # create a cox model to compare with the AFT model
 cox_mod = coxph(Surv(time=hour, event=reason %in% c(2, 3)) ~ backup + bridgecrane + servo + 
@@ -45,6 +45,7 @@ cox_mod = coxph(Surv(time=hour, event=reason %in% c(2, 3)) ~ backup + bridgecran
 
 # check model summaries
 summary(aft_mod)
+exp(coef(aft_mod))
 summary(cox_mod) # will look at backup, elevation interpretations for the purpose of the assignment
 cox_mod$means # senseless, get fractional coefficients for binary variables
 
@@ -56,19 +57,29 @@ summary(cox_mod)
 #  the standard error of our estimate for backup, 0.13682, indicates that we believe the true estimate for the effect of a backup oon
 #  the risk of failure is between ((1-0.6966) * 100) percent and ((1 - 1.1910)*100) percent
 
-# The coefficient of 0.9305 for elevation indicates that each one unit increase in elevation is associated 
-#  with a reduction in the risk of failure by motor or related causes by (1-0.9305) 6.95%
-#  the standard error for elevation indicates the that we expect the true effect to be between a 19.96% decrease in risk and a 8.18% increase in risk 
+# The coefficient of 0.9046 for elevation indicates that each one unit increase in slope is associated 
+#  with a reduction in the risk of failure by motor or surge related causes by (1-0.9046) 9.54%
+#  the standard error for elevation indicates the that we expect the true effect to be between a 15.51% decrease in risk and a 3.14% decrease in risk 
 
+# trashrack!!
 ###################### Interpreting some coefficients ###############################################################################
 
+table(katrina$reason)
 
 ########################## Assumption Checking ###############################################################################
 # Linearity via survival curves
 ggsurvplot(survfit(cox_mod), data = katrina, legend = "none", 
-           xlab = "hour", ylab = "survival probability")
+           xlab = "Hour", ylab = "Survival Probability", title="Survival Curve for Cox PH")
 visreg(cox_mod, "age") # sure, yeah whatever that's linear. linear assumption for Cox PH is satisfied
-
+visreg(cox_mod, "age", xlab = "age", ylab = "partial residuals", gg = TRUE,
+       band = FALSE) +
+  geom_smooth(col = "red", fill = "red") + theme_bw()
+visreg(cox_mod, "slope", xlab = "age", ylab = "partial residuals", gg = TRUE,
+       band = FALSE) +
+  geom_smooth(col = "red", fill = "red") + theme_bw()
+visreg(cox_mod, "elevation", xlab = "age", ylab = "partial residuals", gg = TRUE,
+       band = FALSE) +
+  geom_smooth(col = "red", fill = "red") + theme_bw()
 
 # Time-varying coefficients via checking PH with schoenfeld residuals
 # testing correlation of residuals with time
@@ -130,30 +141,54 @@ plot(fit_zph_log_serv, var = "servo")
 abline(h = 0, col = "red")
 abline(h = cox_mod$coef["servo"], col = "purple", lty = 2, lwd = 2)
 
-# trash
-
-plot(fit_zph, var = "trashrack") # not really linear
+# elevation
+plot(fit_zph, var = "elevation", main = "Elevation Residual's Correlation With Time") # not really linear
 abline(h = 0, col = "red") # reference line at 0
 abline(h = cox_mod$coef["servo"], col = "purple", lty = 2, lwd = 2) # model estimate
 # trying different transformations:
 # identity
-fit_zph_i_serv <- cox.zph(cox_mod, transform = "identity")
-plot(fit_zph_i, var = "servo")
+fit_zph_i_elev <- cox.zph(cox_mod, transform = "identity")
+plot(fit_zph_i_elev, var = "elevation")
+abline(h = 0, col = "red")
+abline(h = cox_mod$coef["elevation"], col = "purple", lty = 2, lwd = 2)
+# log
+fit_zph_log_elev <- cox.zph(cox_mod, transform = "log")
+plot(fit_zph_log_elev, var = "elevation")
+abline(h = 0, col = "red")
+abline(h = cox_mod$coef["elevation"], col = "purple", lty = 2, lwd = 2)
+
+
+# trash
+?plot
+plot(fit_zph, var = "trashrack", main = "Trashrack Residual's Correlation With Time") # not really linear
+abline(h = 0, col = "red") # reference line at 0
+abline(h = cox_mod$coef["trashrack"], col = "purple", lty = 2, lwd = 2) # model estimate
+# trying different transformations:
+# identity
+fit_zph_i_trash <- cox.zph(cox_mod, transform = "identity")
+plot(fit_zph_i_trash, var = "trashrack")
 abline(h = 0, col = "red")
 abline(h = cox_mod$coef["servo"], col = "purple", lty = 2, lwd = 2)
 # log
-fit_zph_log_serv <- cox.zph(cox_mod, transform = "log")
-plot(fit_zph_log_serv, var = "servo")
+fit_zph_log_trash <- cox.zph(cox_mod, transform = "log")
+plot(fit_zph_log_trash, var = "trashrack")
 abline(h = 0, col = "red")
-abline(h = cox_mod$coef["servo"], col = "purple", lty = 2, lwd = 2)
+abline(h = cox_mod$coef["trashrack"], col = "purple", lty = 2, lwd = 2)
 
 #############################################################################################################
 
 ## check to see if the hazards are parallel to each other
-##   by stratifying on backup
-#backup_strat <- coxph(Surv(hour, reason %in% c(2,3)) ~ strata(backup) + bridgecrane + servo + 
-#                     trashrack + elevation + slope + age, data=katrina)
-#ggsurvplot(survfit(cox_mod, backup_strat), data = katrina) # dataframe needed here?
+# stratifying on trashrack
+trash_strat <- coxph(Surv(hour, reason %in% c(2,3)) ~ strata(trashrack) + backup + bridgecrane + servo  
+                         + elevation + slope + age, data=katrina)
+summary(trash_strat)
+ggsurvplot(survfit(trash_strat), data = katrina, fun = "cloglog", title="Plot of Trashrack Strata") # dataframe needed here?
+
+# stratifying on backup
+backup_strat <- coxph(Surv(hour, reason %in% c(2,3)) ~ strata(backup) + bridgecrane + servo + 
+                     trashrack + elevation + slope + age, data=katrina)
+summary(backup_strat)
+ggsurvplot(survfit(backup_strat), data = katrina, fun = "cloglog") # dataframe needed here?
 ### concordance
 concordance(cox_mod)
 ??concordance
