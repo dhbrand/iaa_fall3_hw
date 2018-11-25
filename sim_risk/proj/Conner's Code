@@ -62,22 +62,6 @@ cost %<>% select(
   dry_ret = `Arithmetic Return - Dry Well`
 )
 
-cost %<>% mutate(year = lubridate::year(date))
-
-# creating dataframe of 48 x 2 oberstations for 1991-2006 cost and return
-sub_dat <- cost %>%
-  filter(year >= 1991 & year <= 2006)
-
-combined_cost <- with(sub_dat, c(crud_oil_cost, nat_gas_cost, dry_cost))
-combined_ret <- with(sub_dat, c(crud_oil_ret, nat_gas_ret, dry_ret))
-
-combined <- data.frame(year = sub_dat$year, cost = combined_cost, ret = as.numeric(combined_ret))
-
-avg_06 <- dplyr::select(combined, year, cost) %>% filter(year == 2006) %>% pull %>% mean
-avg_06 = avg_06*1000
-avg <- mean(combined$ret)
-stdev <- sd(combined$ret)
-P19 <- rep(0, 1e4)
 #For wet well calculations
 cost_wet = rep(0,num)
 rev_wet = rep(0,num)
@@ -101,9 +85,9 @@ final.Corr.r <<- cbind(destandardize(Corr.r[,1], init_rate), destandardize(Corr.
 #set initial rates for 2019
 init_rate_all = final.Corr.r[,1] # first column is initial rates
 decline_rate_all = final.Corr.r[,2] # second column is decline rates (CORRELATED!!)
-
-
-for (ii in 1:10000){
+num = 100000
+#Creates distribution of proportions and number of wells. 
+for (ii in 1:num){
   # number of wells is simulated from a uniform distribution
   num_wells = floor(runif(1,10,30)) 
   outcome_count = vector()
@@ -120,129 +104,163 @@ for (ii in 1:10000){
     # use bernoulli distribution (size =1 and n=1) to decide if it's a dry or producing well
     outcome = rbinom(1, 1, prob_PW)
     outcome_count = c(outcome_count,outcome)
-    #Condition upon whether the well is a dry well or a wet well
-    if (outcome == 0){
-      P0 <- avg_06
-      r <- rnorm(n = 1, mean = avg, sd = stdev)
-      
-      Pt <- P0 * (1 + r)
-      
-      for (j in 1:5) {
-        r <- rnorm(n = 1, mean = avg, sd = stdev)
-        Pt <- Pt * (1 + r)
-      }
-      
-      # 2013-2015
-      for (j in 1:3) {
-        r <- rtriangle(1, a = 0.07, b = 0.22, c = 0.0917)
-        Pt <- Pt * (1 - r)
-      }
-      
-      # 2016-2019
-      for (j in 1:4) {
-        r <- rtriangle(1, a = 0.02, b = 0.06, c = 0.05)
-        Pt <- Pt * (1 + r)
-      }
-      
-      
-      acre_cost = 960*rnorm(n=1, mean=600, sd=50)
-      seismic_cost = 43000*rnorm(n=1, mean=3, sd=0.35)
-      staff_cost = rtriangle(n=1, a = 172000, b = 279500, c = 215000)
-      total_cost = acre_cost+seismic_cost+staff_cost
-      
-      cost_dry[ii] = total_cost + Pt
-    }
-  }else{
-    P0 <- avg_06
-    r <- rnorm(n = 1, mean = avg, sd = stdev)
-    
-    Pt <- P0 * (1 + r)
-    
-    for (j in 1:5) {
-      r <- rnorm(n = 1, mean = avg, sd = stdev)
-      Pt <- Pt * (1 + r)
-    }
-    
-    # 2013-2015
-    for (j in 1:3) {
-      r <- rtriangle(1, a = 0.07, b = 0.22, c = 0.0917)
-      Pt <- Pt * (1 - r)
-    }
-    
-    # 2016-2019
-    for (j in 1:4) {
-      r <- rtriangle(1, a = 0.02, b = 0.06, c = 0.05)
-      Pt <- Pt * (1 + r)
-    }
-    
-    ## Year 0 Costs:
-    acre_cost = 960*rnorm(n=1, mean=600, sd=50)
-    seismic_cost = 43000*rnorm(n=1, mean=3, sd=0.35)
-    staff_cost = rtriangle(n=1, a = 172000, b = 279500, c = 215000)
-    setup_cost = rnorm(n=1, mean=390000, sd=50000)
-    init_cost = acre_cost+seismic_cost+staff_cost+setup_cost+Pt
-    
-    ## Year 1 & Beyond
-    #set initial rates
-    royalty_rate = rnorm(n=1, mean=0.25, sd=0.02) #stays the same each year
-    init_rate = init_rate_all[ii] #updates every year based on end_rate equation
-    decline_rate = decline_rate_all[ii] #stays the same each year
-    
-    #build revenue & cost compounding for each year
-    total_cost = init_cost
-    total_rev =0
-    FNR = rep(0,15)
-    
-    #for loop for all 15 years
-    for (jj in 1:15){
-      #find end rate and oil volume for this year
-      end_rate = (1-decline_rate)*init_rate
-      oil_vol= 365*(init_rate+end_rate)/2
-      
-      #obtain price from sheet (high, low, mean could be moved outside for loop for time saving)
-      oil_price = rtriangle(n=1, a=low_vec[jj], b=high_vec[jj], c=mid_vec[jj]) 
-      
-      #calculate revenue
-      revenue= oil_vol*oil_price
-      
-      #calculate royalties on revenue
-      NRI = revenue*royalty_rate
-      new_rev = revenue-NRI
-      
-      #calculate operating costs
-      op_cost_per_barrel = rnorm(n=1, mean=2.25, sd=0.3)
-      op_cost=oil_vol*op_cost_per_barrel
-      
-      #calculate tax
-      tax = new_rev*0.046
-      
-      #final cost & revenue for year
-      cost=tax+NRI+op_cost+staff_cost
-      total_cost=total_cost+cost
-      final_rev = revenue-cost
-      total_rev=total_rev+final_rev
-      
-      #reset initial
-      init_rate = end_rate
-      
-      #FNR Storage
-      FNR[jj] = final_rev
-    }
-    
-    cost_wet[ii]=total_cost
-    rev_wet[ii]=total_rev-total_cost
-    
-    #NPV Calculation
-    NPV = -init_cost
-    for (i in 1:15){
-      NPV = NPV+(FNR[i]/((1+0.1)^i))
-    }
-    NPV_sim[ii]=NPV
   }
   prop = c(prop, sum(outcome_count)/num_wells)
 }
-#Risk values
-VaR = quantile(NPV_sim,0.05) 
-# 0.5882 for 1000 simulations; 0.5833 for 10000 simulations
-tail_values = prop[prop <= VaR]
-ES = mean(tail_values) 
+#Create distribution of costs for dry wells
+
+# From HW1 ####
+
+cost %<>% mutate(year = lubridate::year(date))
+
+# creating dataframe of 48 x 2 oberstations for 1991-2006 cost and return
+sub_dat <- cost %>%
+  filter(year >= 1991 & year <= 2006)
+
+combined_cost <  - with(sub_dat, c(crud_oil_cost, nat_gas_cost, dry_cost))
+combined_ret <- with(sub_dat, c(crud_oil_ret, nat_gas_ret, dry_ret))
+
+combined <- data.frame(year = sub_dat$year, cost = combined_cost, ret = as.numeric(combined_ret))
+
+avg_06 <- dplyr::select(combined, year, cost) %>% filter(year == 2006) %>% pull %>% mean
+avg_06 = avg_06*1000
+avg <- mean(combined$ret)
+stdev <- sd(combined$ret)
+P19 <- rep(0, 1e4)
+
+## Dry Well Cost Simulation:
+cost_dry = rep(0,10000)
+set.seed(303)
+
+for (ii in 1:num){
+  P0 <- avg_06
+  r <- rnorm(n = 1, mean = avg, sd = stdev)
+  
+  Pt <- P0 * (1 + r)
+  
+  for (j in 1:5) {
+    r <- rnorm(n = 1, mean = avg, sd = stdev)
+    Pt <- Pt * (1 + r)
+  }
+  
+  # 2013-2015
+  for (j in 1:3) {
+    r <- rtriangle(1, a = 0.07, b = 0.22, c = 0.0917)
+    Pt <- Pt * (1 - r)
+  }
+  
+  # 2016-2019
+  for (j in 1:4) {
+    r <- rtriangle(1, a = 0.02, b = 0.06, c = 0.05)
+    Pt <- Pt * (1 + r)
+  }
+  
+  
+  acre_cost = 960*rnorm(n=1, mean=600, sd=50)
+  seismic_cost = 43000*rnorm(n=1, mean=3, sd=0.35)
+  staff_cost = rtriangle(n=1, a = 172000, b = 279500, c = 215000)
+  total_cost = acre_cost+seismic_cost+staff_cost
+  
+  cost_dry[ii] = total_cost + Pt
+}
+#calculate costs and revenues for each year (15 year forecast)
+for (ii in 1:num){
+  
+  P0 <- avg_06
+  r <- rnorm(n = 1, mean = avg, sd = stdev)
+  
+  Pt <- P0 * (1 + r)
+  
+  for (j in 1:5) {
+    r <- rnorm(n = 1, mean = avg, sd = stdev)
+    Pt <- Pt * (1 + r)
+  }
+  
+  # 2013-2015
+  for (j in 1:3) {
+    r <- rtriangle(1, a = 0.07, b = 0.22, c = 0.0917)
+    Pt <- Pt * (1 - r)
+  }
+  
+  # 2016-2019
+  for (j in 1:4) {
+    r <- rtriangle(1, a = 0.02, b = 0.06, c = 0.05)
+    Pt <- Pt * (1 + r)
+  }
+  
+  ## Year 0 Costs:
+  acre_cost = 960*rnorm(n=1, mean=600, sd=50)
+  seismic_cost = 43000*rnorm(n=1, mean=3, sd=0.35)
+  staff_cost = rtriangle(n=1, a = 172000, b = 279500, c = 215000)
+  setup_cost = rnorm(n=1, mean=390000, sd=50000)
+  init_cost = acre_cost+seismic_cost+staff_cost+setup_cost+Pt
+  
+  ## Year 1 & Beyond
+  #set initial rates
+  royalty_rate = rnorm(n=1, mean=0.25, sd=0.02) #stays the same each year
+  init_rate = init_rate_all[ii] #updates every year based on end_rate equation
+  decline_rate = decline_rate_all[ii] #stays the same each year
+  
+  #build revenue & cost compounding for each year
+  total_cost = init_cost
+  total_rev =0
+  FNR = rep(0,15)
+  
+  #for loop for all 15 years
+  for (jj in 1:15){
+    #find end rate and oil volume for this year
+    end_rate = (1-decline_rate)*init_rate
+    oil_vol= 365*(init_rate+end_rate)/2
+    
+    #obtain price from sheet (high, low, mean could be moved outside for loop for time saving)
+    oil_price = rtriangle(n=1, a=low_vec[jj], b=high_vec[jj], c=mid_vec[jj]) 
+    
+    #calculate revenue
+    revenue= oil_vol*oil_price
+    
+    #calculate royalties on revenue
+    NRI = revenue*royalty_rate
+    new_rev = revenue-NRI
+    
+    #calculate operating costs
+    op_cost_per_barrel = rnorm(n=1, mean=2.25, sd=0.3)
+    op_cost=oil_vol*op_cost_per_barrel
+    
+    #calculate tax
+    tax = new_rev*0.046
+    
+    #final cost & revenue for year
+    cost=tax+NRI+op_cost+staff_cost
+    total_cost=total_cost+cost
+    final_rev = revenue-cost
+    total_rev=total_rev+final_rev
+    
+    #reset initial
+    init_rate = end_rate
+    
+    #FNR Storage
+    FNR[jj] = final_rev
+  }
+  
+  cost_wet[ii]=total_cost
+  rev_wet[ii]=total_rev-total_cost
+  
+  #NPV Calculation
+  NPV = -init_cost
+  for (i in 1:15){
+    NPV = NPV+(FNR[i]/((1+0.1)^i))
+  }
+  NPV_sim[ii]=NPV
+}
+Final_NPV <- rep(1:num)
+for (k in 1:num){
+  well <- sample(num_wells,1)
+  outcome_prop <- sample(prop,1)
+  num_wet <- floor(well*outcome_prop)
+  num_dry <- floor(well*(1-outcome_prop))
+  samp_NPV <- sample(NPV,num_wet)
+  samp_cost <- sample(cost_dry,num_dry)
+  Net_NPV <- sum(samp_NPV) - sum(samp_cost)
+  Final_NPV[k] <- Net_NPV
+}
+  
