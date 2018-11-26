@@ -263,4 +263,7 @@ for (k in 1:num){
   Net_NPV <- sum(samp_NPV) - sum(samp_cost)
   Final_NPV[k] <- Net_NPV
 }
-  
+# calculate VaR and ES
+VaR = quantile(Final_NPV,0.05) 
+tail_values = Final_NPV[Final_NPV <= VaR]
+ES = mean(tail_values)  
