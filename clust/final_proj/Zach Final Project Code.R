@@ -38,12 +38,13 @@ PCA$sdev[1:5]
 ## 2) Using all pca scores compute the optimal number of clusters using kmeans using both
 ## "wss" and the "silhouette" method. What is the optimal number of components using each 
 ## method. Why may this number be different?
-fviz_nbclust(scale(PCA$scores), kmeans, method = "wss",k.max=50)
-fviz_nbclust(scale(PCA$scores), kmeans, method = "silhouette",k.max=50)
+fviz_nbclust(PCA$scores, kmeans, method = "wss",k.max=20) # looks like 4 is best
+fviz_nbclust(PCA$scores, kmeans, method = "silhouette",k.max=20) # looks like 2 is best (4 second best)
 
 ## 3) Run the command "set.seed(12345)" and run a k-means clustering algorithm using the
 ## pca scores.
 set.seed(12345)
+
 
 ## 3a) Compute the graph of mean spirometry for the 4 clusters (all 4 on one graph).
 
