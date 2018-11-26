@@ -17,7 +17,7 @@ hydro = vector() # a vector containing all the simulated probabilities of having
 resv = vector() # a vector containing all the simulated probabilities of having a developed reservior for a well 
 prop = vector() # a vector containing all the proportions of producing wells
 cost_dry = rep(0,10000)#vector of dry well costs
-
+num = 10000
 
 ## turn off exponential notation
 options(scipen = 999)
@@ -85,8 +85,10 @@ final.Corr.r <<- cbind(destandardize(Corr.r[,1], init_rate), destandardize(Corr.
 #set initial rates for 2019
 init_rate_all = final.Corr.r[,1] # first column is initial rates
 decline_rate_all = final.Corr.r[,2] # second column is decline rates (CORRELATED!!)
-num = 100000
-#Creates distribution of proportions and number of wells. 
+
+#Creates distribution of proportions and number of wells.
+wet = vector()
+total = vector()
 for (ii in 1:num){
   # number of wells is simulated from a uniform distribution
   num_wells = floor(runif(1,10,30)) 
@@ -105,8 +107,12 @@ for (ii in 1:num){
     outcome = rbinom(1, 1, prob_PW)
     outcome_count = c(outcome_count,outcome)
   }
-  prop = c(prop, sum(outcome_count)/num_wells)
+  prop = c(prop, sum(outcome_count),num_wells)
+  wet = c(wet,sum(outcome_count))
+  total = c(total,num_wells)
+  
 }
+outcome_df <- cbind(wet,total) 
 #Create distribution of costs for dry wells
 
 # From HW1 ####
@@ -117,7 +123,7 @@ cost %<>% mutate(year = lubridate::year(date))
 sub_dat <- cost %>%
   filter(year >= 1991 & year <= 2006)
 
-combined_cost <  - with(sub_dat, c(crud_oil_cost, nat_gas_cost, dry_cost))
+combined_cost <- with(sub_dat, c(crud_oil_cost, nat_gas_cost, dry_cost))
 combined_ret <- with(sub_dat, c(crud_oil_ret, nat_gas_ret, dry_ret))
 
 combined <- data.frame(year = sub_dat$year, cost = combined_cost, ret = as.numeric(combined_ret))
@@ -253,17 +259,16 @@ for (ii in 1:num){
   NPV_sim[ii]=NPV
 }
 Final_NPV <- rep(1:num)
-for (k in 1:num){
-  well <- sample(num_wells,1)
-  outcome_prop <- sample(prop,1)
-  num_wet <- floor(well*outcome_prop)
-  num_dry <- floor(well*(1-outcome_prop))
-  samp_NPV <- sample(NPV,num_wet)
-  samp_cost <- sample(cost_dry,num_dry)
+for (k in 1:1000000){
+  well <- outcome_df[k,2]
+  num_wet <- outcome_df[k,1]
+  num_dry <- well - num_wet
+  samp_NPV <- sample(NPV,num_wet,replace = TRUE)
+  samp_cost <- sample(cost_dry,num_dry,replace = TRUE)
   Net_NPV <- sum(samp_NPV) - sum(samp_cost)
   Final_NPV[k] <- Net_NPV
 }
 # calculate VaR and ES
 VaR = quantile(Final_NPV,0.05) 
 tail_values = Final_NPV[Final_NPV <= VaR]
-ES = mean(tail_values)  
+ES = mean(tail_values)   
