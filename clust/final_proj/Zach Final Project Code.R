@@ -3,6 +3,7 @@ load("C:/Users/zacha/Documents/MSA/Fall 2018/Analytic Methods/Clustering/Data/fi
 library(splines)
 library(factoextra)
 library(dplyr)
+library(mclust)
 
 ##########################
 ## Dr. Wheeler Provided ##
@@ -85,17 +86,25 @@ ggplot(data=agg_data, aes(x=obs, y=mean, group=cluster, colour = as.factor(clust
 ## the other clusters?  Describe this cluster so a physician can better understand
 ## important characteristics of these clusters. 
 
+ggplot(data=clus3, aes(x=obs, y=mean))+
+  geom_line()
+
 ## 3c) Looking at clusters 1,2, and 4 which clusters has the largest lung capacity?
 ## which one has the least lung capacity? Describe these three groups in terms of
 ## the curves as well as the additional variables that are available in the data
 ## frame cdata. Provide figures with your descriptions.
+clust_1_2_4 <- rbind(clus1, clus2, clus4)
+ggplot(data=clust_1_2_4, aes(x=obs, y=mean, group=cluster, colour = as.factor(cluster)))+
+  geom_line()
 
 ## 4) NOW look at the data using MCLUST type 'set.seed(12345)': 
+set.seed(12345)
 
 ## 4a) Using mclustbic() and columns 10-20 of cdata (NOT the principal component values).
 ## estimate the optimal number of  cluster components using the BIC and only with
 ## modelNames='VVV' and G = 1:20. Show a graph of the estimate. Is this number different than
 ## the ones given above, why? (This will take a while).
+temp <- mclustBIC(cdata[,10:20], G=1:20) ## this shows VVV 15 is the best model (12 and 13 next best)
 
 ## 4b) Now using G = 6 and modelNames='VVV' and the same columns, provide a graph of each cluster's 
 ## mean curve (USING ALL OF THE DATA COLUMNS). Put all plots on one graph.
