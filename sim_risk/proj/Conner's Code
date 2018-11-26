@@ -258,17 +258,36 @@ for (ii in 1:num){
   }
   NPV_sim[ii]=NPV
 }
-Final_NPV <- rep(1:num)
-for (k in 1:1000000){
-  well <- outcome_df[k,2]
-  num_wet <- outcome_df[k,1]
-  num_dry <- well - num_wet
-  samp_NPV <- sample(NPV,num_wet,replace = TRUE)
-  samp_cost <- sample(cost_dry,num_dry,replace = TRUE)
-  Net_NPV <- sum(samp_NPV) - sum(samp_cost)
-  Final_NPV[k] <- Net_NPV
+################Distribution of NPV's and bootstrap VaR CI###########
+VaR_vec <- vector()
+well <- vector()
+num_wet <- vector()
+num_dry <- vector()
+Final_NPV <- vector()
+for (kk in 1:1000){
+  for (k in 1:10000){
+    well <- outcome_df[k,2]
+    num_wet <- outcome_df[k,1]
+    num_dry <- well - num_wet
+    samp_NPV <- sample(NPV,num_wet,replace = TRUE)
+    samp_cost <- sample(cost_dry,num_dry,replace = TRUE)
+    Net_NPV <- sum(samp_NPV) - sum(samp_cost)
+    Final_NPV[k] <- Net_NPV
+  }
+  VaR.one = quantile(Final_NPV,0.01)
+  VaR_vec[kk] <- VaR.one
 }
+mean(VaR_vec)
+# 95% CI
+sem <- sd(VaR_vec) / sqrt(length(VaR_vec)) # (4687988, 4748311)
+# 95% confidence intervals of the mean
+c(10800000 - 1.96 * sem, 10800000 + 1.96 * sem)
 # calculate VaR and ES
-VaR = quantile(Final_NPV,0.05) 
+VaR = quantile(Final_NPV,0.01) 
 tail_values = Final_NPV[Final_NPV <= VaR]
-ES = mean(tail_values)   
+ES = mean(tail_values) 
+# 95% CI
+sem <- sd(tail_values) / sqrt(length(tail_values)) # (4687988, 4748311)
+# 95% confidence intervals of the mean
+c(4000000 - 1.96 * sem, 4000000 + 1.96 * sem)
+VaR
