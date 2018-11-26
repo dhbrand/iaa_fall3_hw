@@ -44,9 +44,41 @@ fviz_nbclust(PCA$scores, kmeans, method = "silhouette",k.max=20) # looks like 2 
 ## 3) Run the command "set.seed(12345)" and run a k-means clustering algorithm using the
 ## pca scores.
 set.seed(12345)
-
+#kmean_2 <- kmeans(PCA$scores,2,nstart=25) ## 3a asks for "4 clusters"
+#cdata$cluster2 <- kmean_2$cluster ## 3a asks for "4 clusters"
+kmean_4 <- kmeans(PCA$scores,4,nstart=25)
+cdata$cluster4 <- kmean_4$cluster
 
 ## 3a) Compute the graph of mean spirometry for the 4 clusters (all 4 on one graph).
+clus1 <- data.frame(t(aggregate(cdata, by=list(cdata$cluster4),
+                      FUN=mean, na.rm=TRUE))[7:66,1])
+clus1$cluster <- 1
+clus1$obs <- 1:nrow(clus1)
+colnames(clus1)[1] <- "mean"
+
+clus2 <- data.frame(t(aggregate(cdata, by=list(cdata$cluster4),
+                     FUN=mean, na.rm=TRUE))[7:66,2])
+clus2$cluster <- 2
+clus2$obs <- 1:nrow(clus2)
+colnames(clus2)[1] <- "mean"
+
+clus3 <- data.frame(t(aggregate(cdata, by=list(cdata$cluster4),
+                     FUN=mean, na.rm=TRUE))[7:66,3])
+clus3$cluster <- 3
+clus3$obs <- 1:nrow(clus3)
+colnames(clus3)[1] <- "mean"
+
+clus4 <- data.frame(t(aggregate(cdata, by=list(cdata$cluster4),
+                     FUN=mean, na.rm=TRUE))[7:66,4])
+clus4$cluster <- 4
+clus4$obs <- 1:nrow(clus4)
+colnames(clus4)[1] <- "mean"
+
+agg_data <- rbind(clus1, clus2, clus3, clus4)
+
+ggplot(data=agg_data, aes(x=obs, y=mean, group=cluster, colour = as.factor(cluster)))+
+  geom_line()
+
 
 ## 3b) Look at cluster 3. Plot the graph of this cluster and give the mean values (on
 ## the original scale) for columns 2-65. What makes this cluster different from
