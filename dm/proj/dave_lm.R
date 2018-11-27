@@ -43,13 +43,66 @@ valid <- assessment(valid_split)
 x_valid <- valid[setdiff(names(valid), "target")]
 y_valid <- valid$target
 
+
+
+train <- read_csv('dm/data/train_data.csv')
+test <- read_csv('dm/data/valid_data.csv')
+
+X_train <- select(train, -target)
+y_train <- train$target
+
+X_test <- select(test, -target)
+y_test <- test$target
+
 # Basic model ####
-simple_mod <- lm(target ~ . , data = train_v2)
+simple_mod <- lm(target ~ . , data = train)
 summary(simple_mod)
 
-pred_valid <- predict(simple_mod, x_valid)
+y_pred <- predict(simple_mod, test)
 
 # exploring rank deficiency error which could indicate collinearity
 length(simple_mod$coefficients) > simple_mod$rank
 
-MSE(pred_valid, y_valid) # 2.147556
+MSE(y_pred, y_test) # 2.147556
+
+
+train <- read_csv('dm/data/fa_train.csv')
+test <- read_csv('dm/data/fa_valid.csv')
+
+X_train <- select(train, -target)
+y_train <- train$target
+
+X_test <- select(test, -target)
+y_test <- test$target
+
+# Basic model ####
+ft_mod <- lm(target ~ . , data = train)
+summary(ft_mod)
+
+y_pred <- predict(ft_mod, test)
+
+# exploring rank deficiency error which could indicate collinearity
+length(simple_mod$coefficients) > simple_mod$rank
+
+MSE(y_pred, y_test) # 2.023572
+
+
+train <- read_csv('dm/data/pca_train.csv')
+test <- read_csv('dm/data/pca_valid.csv')
+
+X_train <- select(train, -target)
+y_train <- train$target
+
+X_test <- select(test, -target)
+y_test <- test$target
+
+# Basic model ####
+pca_mod <- lm(target ~ . , data = train)
+summary(pca_mod)
+
+y_pred <- predict(pca_mod, test)
+
+# exploring rank deficiency error which could indicate collinearity
+length(simple_mod$coefficients) > simple_mod$rank
+
+MSE(y_pred, y_test) # 2.036558
