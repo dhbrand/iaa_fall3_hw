@@ -96,6 +96,9 @@ ggplot(data=clus3, aes(x=obs, y=mean))+
 clust_1_2_4 <- rbind(clus1, clus2, clus4)
 ggplot(data=clust_1_2_4, aes(x=obs, y=mean, group=cluster, colour = as.factor(cluster)))+
   geom_line()
+summary(cdata[which(cdata$cluster4==1),][,2:5])
+summary(cdata[which(cdata$cluster4==2),][,2:5])
+summary(cdata[which(cdata$cluster4==4),][,2:5])
 
 ## 4) NOW look at the data using MCLUST type 'set.seed(12345)': 
 set.seed(12345)
@@ -104,15 +107,76 @@ set.seed(12345)
 ## estimate the optimal number of  cluster components using the BIC and only with
 ## modelNames='VVV' and G = 1:20. Show a graph of the estimate. Is this number different than
 ## the ones given above, why? (This will take a while).
-temp <- mclustBIC(cdata[,10:20], G=1:20) ## this shows VVV 15 is the best model (12 and 13 next best)
+ClustBIC<- mclustBIC(cdata[,10:20], modelNames='VVV', G=1:20) ## this shows VVV 10 is the best model (9 and 8 next best)
+plot(ClustBIC)
+ClustBIC
 
 ## 4b) Now using G = 6 and modelNames='VVV' and the same columns, provide a graph of each cluster's 
 ## mean curve (USING ALL OF THE DATA COLUMNS). Put all plots on one graph.
+clust <- Mclust(cdata[,10:20],G=6, modelNames='VVV')
+cdata$cluster_mclust <- clust$classification
+
+mclus1 <- data.frame(t(aggregate(cdata, by=list(cdata$cluster_mclust),
+                                FUN=mean, na.rm=TRUE))[7:67,1])
+mclus1$cluster <- "m1"
+mclus1$obs <- 1:nrow(mclus1)
+colnames(mclus1)[1] <- "mean"
+mclus1 <- mclus1[1:60,]
+
+mclus2 <- data.frame(t(aggregate(cdata, by=list(cdata$cluster_mclust),
+                                FUN=mean, na.rm=TRUE))[7:67,2])
+mclus2$cluster <- "m2"
+mclus2$obs <- 1:nrow(mclus2)
+colnames(mclus2)[1] <- "mean"
+mclus2 <- mclus2[1:60,]
+
+mclus3 <- data.frame(t(aggregate(cdata, by=list(cdata$cluster_mclust),
+                                FUN=mean, na.rm=TRUE))[7:67,3])
+mclus3$cluster <- "m3"
+mclus3 <- mclus3[1:60,]
+mclus3$obs <- 1:nrow(mclus3)
+colnames(mclus3)[1] <- "mean"
+
+
+mclus4 <- data.frame(t(aggregate(cdata, by=list(cdata$cluster_mclust),
+                                FUN=mean, na.rm=TRUE))[7:67,4])
+mclus4$cluster <- "m4"
+mclus4$obs <- 1:nrow(mclus4)
+colnames(mclus4)[1] <- "mean"
+mclus4 <- mclus4[1:60,]
+
+mclus5 <- data.frame(t(aggregate(cdata, by=list(cdata$cluster_mclust),
+                                FUN=mean, na.rm=TRUE))[7:67,5])
+
+mclus5$cluster <- "m5"
+mclus5$obs <- 1:nrow(mclus5)
+colnames(mclus5)[1] <- "mean"
+mclus5 <- mclus5[1:60,]
+
+mclus6 <- data.frame(t(aggregate(cdata, by=list(cdata$cluster_mclust),
+                                FUN=mean, na.rm=TRUE))[7:67,6])
+mclus6$cluster <- "m6"
+mclus6$obs <- 1:nrow(mclus6)
+colnames(mclus6)[1] <- "mean"
+mclus6 <- mclus6[1:60,]
+
+mclust_agg_data <- rbind(mclus1, mclus2, mclus3, mclus4, mclus5, mclus6)
+
+ggplot(data=mclust_agg_data, aes(x=obs, y=mean, group=cluster, colour = as.factor(cluster)))+
+  geom_line()
 
 ## 4c) Using all of the data compare cluster 4 with cluster 3 from the kmeans() cluster what can you 
 ## say about the similarities between these two clusters, what are the differences? Which estimate
 ## makes more sense? What do you trust more? What are the benefits of using mixture modeling over
 ## kmeans, what are the issues?
+summary(cdata[,1:5])
+summary(cdata[which(cdata$cluster4==3),][,1:5])
+summary(cdata[which(cdata$cluster_mclust==6),][,1:5])
 
 ## 4d) Are there any clusters similar to the k-means clusters? Describe each cluster.
-
+all <- rbind(clus1, clus2, clus3, clus4, mclus1, mclus2, mclus3, mclus4, mclus5, mclus6)
+ggplot(data=all, aes(x=obs, y=mean, group=cluster, colour = as.factor(cluster)))+
+  geom_line()
+  # M6 and 3 are close
+  # M5 and 1 are also close
+  # all others fall in the middle and get very blurry
