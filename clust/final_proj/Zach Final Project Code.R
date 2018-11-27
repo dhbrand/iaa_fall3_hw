@@ -85,7 +85,6 @@ ggplot(data=agg_data, aes(x=obs, y=mean, group=cluster, colour = as.factor(clust
 ## the original scale) for columns 2-65. What makes this cluster different from
 ## the other clusters?  Describe this cluster so a physician can better understand
 ## important characteristics of these clusters. 
-
 ggplot(data=clus3, aes(x=obs, y=mean))+
   geom_line()
 
@@ -93,6 +92,19 @@ ggplot(data=clus3, aes(x=obs, y=mean))+
 ## which one has the least lung capacity? Describe these three groups in terms of
 ## the curves as well as the additional variables that are available in the data
 ## frame cdata. Provide figures with your descriptions.
+trap_area <- function(dataframe){
+  total = as.numeric(0)
+  len = nrow(dataframe)-1
+  for (i in 1:len){
+    i2 = i+1
+    total = total+((dataframe[i,1]+dataframe[i2,1])/2)
+  }
+  return(total)
+}
+trap_area(clus1)
+trap_area(clus2)
+trap_area(clus3)
+trap_area(clus4)
 clust_1_2_4 <- rbind(clus1, clus2, clus4)
 ggplot(data=clust_1_2_4, aes(x=obs, y=mean, group=cluster, colour = as.factor(cluster)))+
   geom_line()
