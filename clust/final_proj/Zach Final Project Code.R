@@ -101,30 +101,32 @@ trap_area <- function(dataframe){
   }
   return(total)
 }
-trap_area(clus1)
-trap_area(clus2)
-trap_area(clus3)
-trap_area(clus4)
+trap_area(clus1) #AUC for cluster 1
+trap_area(clus2) #AUC for cluster 2
+trap_area(clus3) #AUC for cluster 3
+trap_area(clus4) #AUC for cluster 4
+
 clust_1_2_4 <- rbind(clus1, clus2, clus4)
 ggplot(data=clust_1_2_4, aes(x=obs, y=mean, group=cluster, colour = as.factor(cluster)))+
   geom_line()
-summary(cdata[which(cdata$cluster4==1),][,2:5])
-summary(cdata[which(cdata$cluster4==2),][,2:5])
-summary(cdata[which(cdata$cluster4==4),][,2:5])
+summary(cdata[which(cdata$cluster4==1),][,2:5]) # summary stats for cluster 1
+summary(cdata[which(cdata$cluster4==2),][,2:5]) # summary stats for cluster 2
+summary(cdata[which(cdata$cluster4==4),][,2:5]) # summary stats for cluster 4
 
 ## 4) NOW look at the data using MCLUST type 'set.seed(12345)': 
-set.seed(12345)
 
 ## 4a) Using mclustbic() and columns 10-20 of cdata (NOT the principal component values).
 ## estimate the optimal number of  cluster components using the BIC and only with
 ## modelNames='VVV' and G = 1:20. Show a graph of the estimate. Is this number different than
 ## the ones given above, why? (This will take a while).
-ClustBIC<- mclustBIC(cdata[,10:20], modelNames='VVV', G=1:20) ## this shows VVV 10 is the best model (9 and 8 next best)
+set.seed(12345)
+ClustBIC<- mclustBIC(cdata[,10:20], modelNames='VVV', G=1:20) ## this shows VVV 13 is the best model (16 and 15 next best)
 plot(ClustBIC)
 ClustBIC
 
 ## 4b) Now using G = 6 and modelNames='VVV' and the same columns, provide a graph of each cluster's 
 ## mean curve (USING ALL OF THE DATA COLUMNS). Put all plots on one graph.
+set.seed(12345)
 clust <- Mclust(cdata[,10:20],G=6, modelNames='VVV')
 cdata$cluster_mclust <- clust$classification
 
@@ -181,14 +183,28 @@ ggplot(data=mclust_agg_data, aes(x=obs, y=mean, group=cluster, colour = as.facto
 ## say about the similarities between these two clusters, what are the differences? Which estimate
 ## makes more sense? What do you trust more? What are the benefits of using mixture modeling over
 ## kmeans, what are the issues?
-summary(cdata[,1:5])
-summary(cdata[which(cdata$cluster4==3),][,1:5])
-summary(cdata[which(cdata$cluster_mclust==6),][,1:5])
+trap_area(clus3) #AUC for kmeans cluster 3
+trap_area(mclus4) #AUC for mm cluster 4
+clust3_4 = rbind(clus3, mclus4)
+ggplot(data=clust3_4, aes(x=obs, y=mean, group=cluster, colour = as.factor(cluster)))+
+  geom_line()
+summary(cdata[,1:5]) # all data summary stats
+summary(cdata[which(cdata$cluster4==3),][,1:5]) # kmeans cluster 3 summary stats
+summary(cdata[which(cdata$cluster_mclust==4),][,1:5]) # mixture model cluster 4 summary stats
 
 ## 4d) Are there any clusters similar to the k-means clusters? Describe each cluster.
+trap_area(clus1)
+trap_area(clus2)
+trap_area(clus3)
+trap_area(clus4)
+trap_area(mclus1)
+trap_area(mclus2)
+trap_area(mclus3)
+trap_area(mclus4)
+trap_area(mclus5)
+trap_area(mclus6)
 all <- rbind(clus1, clus2, clus3, clus4, mclus1, mclus2, mclus3, mclus4, mclus5, mclus6)
 ggplot(data=all, aes(x=obs, y=mean, group=cluster, colour = as.factor(cluster)))+
   geom_line()
-  # M6 and 3 are close
-  # M5 and 1 are also close
-  # all others fall in the middle and get very blurry
+  # M6 and 1 are close
+  # M1 and 2 are also close
