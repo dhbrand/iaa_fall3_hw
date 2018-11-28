@@ -26,10 +26,13 @@ cdata <- cbind(final_data[,1:5],betas)
 ##########################
 cdata$AGE <- as.numeric(cdata$AGE)
 cdata$EVER_SMOKE <- as.numeric(cdata$EVER_SMOKE)
-cdata$ASTHMA <- as.numeric(cdata$EVER_SMOKE)
+cdata$ASTHMA <- as.numeric(cdata$ASTHMA)
 cdata$POVERTY_RATIO <- as.numeric(cdata$POVERTY_RATIO)
 ##########################
 ##########################
+
+## Remove duplicates
+#cdata = distinct(cdata)
 
 ## 1) Perform a principal components analysis on columns 2 through 65.
 ## List the standard deviations for the first 5 components. 
@@ -39,8 +42,8 @@ PCA$sdev[1:5]
 ## 2) Using all pca scores compute the optimal number of clusters using kmeans using both
 ## "wss" and the "silhouette" method. What is the optimal number of components using each 
 ## method. Why may this number be different?
-fviz_nbclust(PCA$scores, kmeans, method = "wss",k.max=20) # looks like 4 is best
-fviz_nbclust(PCA$scores, kmeans, method = "silhouette",k.max=20) # looks like 2 is best (4 second best)
+fviz_nbclust(PCA$scores, kmeans, method = "wss",k.max=20) # looks like 4 or 5 is best
+fviz_nbclust(PCA$scores, kmeans, method = "silhouette",k.max=20) # looks like 2 is best (5 second best)
 
 ## 3) Run the command "set.seed(12345)" and run a k-means clustering algorithm using the
 ## pca scores.
@@ -85,8 +88,15 @@ ggplot(data=agg_data, aes(x=obs, y=mean, group=cluster, colour = as.factor(clust
 ## the original scale) for columns 2-65. What makes this cluster different from
 ## the other clusters?  Describe this cluster so a physician can better understand
 ## important characteristics of these clusters. 
+sum_stats <- function(dataframe, clus_var, clus_num){
+  print(summary(dataframe[which(dataframe[[clus_var]]==clus_num),2:5]))
+  print(paste("Total People:", nrow(dataframe[which(dataframe[[clus_var]]==clus_num),])))
+  print(paste("Total Smokers:", nrow(dataframe[which(dataframe[[clus_var]]==clus_num & dataframe$EVER_SMOKE==1),])))
+  print(paste("Total with Asthma:", nrow(dataframe[which(dataframe[[clus_var]]==clus_num & dataframe$ASTHMA==1),])))
+}
 ggplot(data=clus3, aes(x=obs, y=mean))+
   geom_line()
+
 
 ## 3c) Looking at clusters 1,2, and 4 which clusters has the largest lung capacity?
 ## which one has the least lung capacity? Describe these three groups in terms of
