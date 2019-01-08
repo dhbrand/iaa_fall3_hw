@@ -26,10 +26,13 @@ cdata <- cbind(final_data[,1:5],betas)
 ##########################
 cdata$AGE <- as.numeric(cdata$AGE)
 cdata$EVER_SMOKE <- as.numeric(cdata$EVER_SMOKE)
-cdata$ASTHMA <- as.numeric(cdata$EVER_SMOKE)
+cdata$ASTHMA <- as.numeric(cdata$ASTHMA)
 cdata$POVERTY_RATIO <- as.numeric(cdata$POVERTY_RATIO)
 ##########################
 ##########################
+
+## Remove duplicates
+#cdata = distinct(cdata)
 
 ## 1) Perform a principal components analysis on columns 2 through 65.
 ## List the standard deviations for the first 5 components. 
@@ -39,8 +42,8 @@ PCA$sdev[1:5]
 ## 2) Using all pca scores compute the optimal number of clusters using kmeans using both
 ## "wss" and the "silhouette" method. What is the optimal number of components using each 
 ## method. Why may this number be different?
-fviz_nbclust(PCA$scores, kmeans, method = "wss",k.max=20) # looks like 4 is best
-fviz_nbclust(PCA$scores, kmeans, method = "silhouette",k.max=20) # looks like 2 is best (4 second best)
+fviz_nbclust(PCA$scores, kmeans, method = "wss",k.max=20) # looks like 4 or 5 is best
+fviz_nbclust(PCA$scores, kmeans, method = "silhouette",k.max=20) # looks like 2 is best (5 second best)
 
 ## 3) Run the command "set.seed(12345)" and run a k-means clustering algorithm using the
 ## pca scores.
@@ -85,8 +88,17 @@ ggplot(data=agg_data, aes(x=obs, y=mean, group=cluster, colour = as.factor(clust
 ## the original scale) for columns 2-65. What makes this cluster different from
 ## the other clusters?  Describe this cluster so a physician can better understand
 ## important characteristics of these clusters. 
+sum_stats <- function(dataframe, clus_var, clus_num){
+  print(summary(dataframe[which(dataframe[[clus_var]]==clus_num),2:5]))
+  print(paste("Total People:", nrow(dataframe[which(dataframe[[clus_var]]==clus_num),])))
+  print(paste("Total Smokers:", nrow(dataframe[which(dataframe[[clus_var]]==clus_num & dataframe$EVER_SMOKE==1),])))
+  print(paste("Total with Asthma:", nrow(dataframe[which(dataframe[[clus_var]]==clus_num & dataframe$ASTHMA==1),])))
+  print(paste("Percent in Poverty:", round(length(dataframe[which(dataframe[[clus_var]]==clus_num & dataframe$POVERTY_RATIO<1),5])/nrow(dataframe[which(dataframe[[clus_var]]==clus_num),])*100,2)))
+}
+sum_stats(cdata, "cluster4", 3)
 ggplot(data=clus3, aes(x=obs, y=mean))+
   geom_line()
+
 
 ## 3c) Looking at clusters 1,2, and 4 which clusters has the largest lung capacity?
 ## which one has the least lung capacity? Describe these three groups in terms of
@@ -109,9 +121,9 @@ trap_area(clus4) #AUC for cluster 4
 clust_1_2_4 <- rbind(clus1, clus2, clus4)
 ggplot(data=clust_1_2_4, aes(x=obs, y=mean, group=cluster, colour = as.factor(cluster)))+
   geom_line()
-summary(cdata[which(cdata$cluster4==1),][,2:5]) # summary stats for cluster 1
-summary(cdata[which(cdata$cluster4==2),][,2:5]) # summary stats for cluster 2
-summary(cdata[which(cdata$cluster4==4),][,2:5]) # summary stats for cluster 4
+sum_stats(cdata, "cluster4", 1) # summary stats for cluster 1
+sum_stats(cdata, "cluster4", 2) # summary stats for cluster 2
+sum_stats(cdata, "cluster4", 4) # summary stats for cluster 4
 
 ## 4) NOW look at the data using MCLUST type 'set.seed(12345)': 
 
@@ -188,23 +200,64 @@ trap_area(mclus4) #AUC for mm cluster 4
 clust3_4 = rbind(clus3, mclus4)
 ggplot(data=clust3_4, aes(x=obs, y=mean, group=cluster, colour = as.factor(cluster)))+
   geom_line()
-summary(cdata[,1:5]) # all data summary stats
-summary(cdata[which(cdata$cluster4==3),][,1:5]) # kmeans cluster 3 summary stats
-summary(cdata[which(cdata$cluster_mclust==4),][,1:5]) # mixture model cluster 4 summary stats
+sum_stats(cdata, "cluster4", 3) # kmeans cluster 3 summary stats
+sum_stats(cdata, "cluster_mclust", 4) # mixture model cluster 4 summary stats
 
 ## 4d) Are there any clusters similar to the k-means clusters? Describe each cluster.
-trap_area(clus1)
-trap_area(clus2)
-trap_area(clus3)
-trap_area(clus4)
-trap_area(mclus1)
-trap_area(mclus2)
-trap_area(mclus3)
-trap_area(mclus4)
-trap_area(mclus5)
-trap_area(mclus6)
+# trap_area(clus1)
+# trap_area(clus2)
+# trap_area(clus3)
+# trap_area(clus4)
+# trap_area(mclus1)
+# trap_area(mclus2)
+# trap_area(mclus3)
+# trap_area(mclus4)
+# trap_area(mclus5)
+# trap_area(mclus6)
+# sum_stats(cdata, "cluster4", 1)
+# sum_stats(cdata, "cluster4", 2)
+# sum_stats(cdata, "cluster4", 3)
+# sum_stats(cdata, "cluster4", 4)
+# sum_stats(cdata, "cluster_mclust", 1)
+# sum_stats(cdata, "cluster_mclust", 2)
+# sum_stats(cdata, "cluster_mclust", 3)
+# sum_stats(cdata, "cluster_mclust", 4)
+# sum_stats(cdata, "cluster_mclust", 5)
+# sum_stats(cdata, "cluster_mclust", 6)
 all <- rbind(clus1, clus2, clus3, clus4, mclus1, mclus2, mclus3, mclus4, mclus5, mclus6)
 ggplot(data=all, aes(x=obs, y=mean, group=cluster, colour = as.factor(cluster)))+
   geom_line()
   # M6 and 1 are close
   # M1 and 2 are also close
+
+
+
+
+###########
+## EXTRA ##
+###########
+
+asthma <- data.frame(t(aggregate(cdata, by=list(cdata$ASTHMA),
+                                 FUN=mean, na.rm=TRUE))[7:67,2])
+asthma$cluster <- "asthma"
+asthma <- asthma[1:60,]
+asthma$obs <- 1:nrow(asthma)
+colnames(asthma)[1] <- "mean"
+
+
+noasthma <- data.frame(t(aggregate(cdata, by=list(cdata$ASTHMA),
+                                   FUN=mean, na.rm=TRUE))[7:66,1])
+noasthma$cluster <- "noasthma"
+noasthma <- noasthma[1:60,]
+noasthma$obs <- 1:nrow(noasthma)
+colnames(noasthma)[1] <- "mean"
+
+a <-rbind(asthma, noasthma)
+ggplot(data=a, aes(x=obs, y=mean, group=cluster, colour = as.factor(cluster)))+
+  geom_line()
+
+
+cdata$all <- 1
+y <- data.frame(t(aggregate(cdata, by=list(cdata$all),
+                                   FUN=mean, na.rm=TRUE))[7:66,1])
+trap_area(y)
